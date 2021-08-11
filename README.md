@@ -162,21 +162,33 @@ The cancel function can only be called **from the recovery address**, and only a
 **Teal**
 
 ```java
+#pragma version 3
+
+// aseert that this transaction comes with an application call to our stateful contract
 gtxn 1 TypeEnum
 int appl
+==
 assert
 
 gtxn 1 ApplicationID
 int <APP-ID>
+==
 assert
 
+// assert that this transaction doesn't rekey
 txn RekeyTo
 global ZeroAddress
+==
 assert
 
+// assert that no fee is payed by this contract
 txn Fee
 int 0
+==
 assert
+
+// approve
+int 1
 ```
 
 ## Creating the vault

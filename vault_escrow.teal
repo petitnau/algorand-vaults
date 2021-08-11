@@ -1,5 +1,6 @@
 #pragma version 3
 
+// aseert that this transaction comes with an application call to our stateful contract
 gtxn 1 TypeEnum
 int appl
 ==
@@ -10,14 +11,17 @@ int <APP-ID>
 ==
 assert
 
+// assert that this transaction doesn't rekey
 txn RekeyTo
 global ZeroAddress
 ==
 assert
 
+// assert that no fee is payed by this contract
 txn Fee
 int 0
 ==
 assert
 
+// approve
 int 1
