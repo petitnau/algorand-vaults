@@ -1,12 +1,12 @@
 # Overview
 
-When users need not to make quick expenditures, vaults represent a secure solution to keep their money: they require a definite wait time between the request and the finalization of a transaction, allowing the user to cancel potential requests made by malevolent users.
+Vaults are a security mechanism to prevent cryptocurrency from being immediately withdrawn. When a user wants to withdraw some crypto from a vault, they must first issue a request, and the withdraw is finalized only after a certain wait time has passed since the request. During the wait time, the request can be cancelled by using a recovery key. Vaults mitigate the risk that the user's private key is stolen: whenever an adversary attempts a withdraw with a stolen private key, the legit user can cancel the operation through the recovery key.
 
 ```
 todo add references
 ```
 
-We will describe the contract specifics with AlgoML, a higher level language than teal that splits the contract logic into functions that can be called using transactions, as long as certain preconditions are met.    
+Since the TEAL implementation of vaults is quite complex, we first specify their functionality in AlgoML, a novel specification language for Algorand contracts, that compiles into TEAL scripts.     
 
 ## Table of contents
 - [Overview](#overview)
@@ -43,9 +43,9 @@ We will describe the contract specifics with AlgoML, a higher level language tha
 
 ## The contract state
 
-The contract must maintain the state of seven different variables.
+The contract state is stored in the following variables:
 
-* `wait_time` maintains the withdrawal wait time: how many rounds must pass between the withdrawal request and the withdrawal finalization
+* `wait_time` is the withdrawal wait time: how many rounds must pass between the withdrawal request and the withdrawal finalization
 * `recovery` is the address from which the cancel call must originate
 * `vault` is the escrow address, where the deposited funds will be kept
 
