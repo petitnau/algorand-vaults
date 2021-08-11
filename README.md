@@ -37,6 +37,9 @@ Since the TEAL implementation of vaults is quite complex, we first specify their
 - [Full Code](#full-code)
   - [AlgoML](#algoml)
   - [Teal](#teal)
+    - [Stateful contract's approval program](#stateful-contracts-approval-program)
+    - [Stateful contract's clear program](#stateful-contracts-clear-program)
+    - [Stateless contract](#stateless-contract)
 
 
 # Specification
@@ -179,47 +182,45 @@ assert
 ## Creating the vault
 **Teal**
 ```java
-/* check that we're calling the create function */
+//* Check if we're calling the create function *//
 
-// Check that there are no other transactions in this atomic groupp
+// check if there are no other transactions in this atomic group
 global GroupSize
 int 1
 ==
 bz not_create
 
-// check that the application is being created with this transaction
+// check if the application is being created with this transaction
 txn ApplicationID
 int 0
 ==
 bz not_create
 
-// Check that the call has 3 arguments ("create" + the two actual arguments)
+// check if the call has 3 arguments ("create" + the two actual arguments: recovery account and wait_time)
 txn NumAppArgs
 int 3
 ==
 bz not_create
 
-// Check that the first argument is the byte string "create"
+// check if the first argument is the byte string "create"
 txna ApplicationArgs 0
 byte "create"
 ==
 bz not_create
 
-/* change state */
+//* Change the contract state *//
 
-// Change the current state into init_escrow (waiting for escrow initialization)
+// set the contract state to init_escrow (waiting for escrow initialization)
 byte "gstate"
 byte "init_escrow"
 app_global_put
 
-/* change statevars */
-
-// Save the first argument (the address of the recovery account) into the global variable "recovery"
+// save the first argument (the address of the recovery account) into the global variable "recovery"
 byte "recovery"
 txna ApplicationArgs 1
 app_global_put
 
-// Save the second argument (the time that must pass between withdrawal request and finalization) into the global variable "wait_time"
+// save the second argument (the time that must pass between withdrawal request and finalization) into the global variable "wait_time"
 byte "wait_time"
 txna ApplicationArgs 2
 btoi
@@ -233,49 +234,51 @@ b approve
 ```java
 not_create:
 
-/* check that we're calling the init_escrow function */
+//* Check if we're calling the init_escrow function *//
 
-// Check that there is one other transactions in this atomic group, the payment transaction needed to initialize the escrow account
+// check if there is one other transactions in this atomic group: the payment transaction needed to initialize the escrow account
 global GroupSize
 int 2
 ==
 bz not_initescrow
 
-// check that the application is currently waiting to initialize the escrow
+// check if the application is currently waiting to initialize the escrow
 byte "gstate"
 app_global_get
 byte "init_escrow"
 ==
-not_initescrow
-// Check that this transaction is sent by the contract creator
+bz not_initescrow
+
+// check if this transaction is sent by the contract creator
 txn Sender
 global CreatorAddress
 ==
 bz not_initescrow
 
-// Check that the other transaction is a pay transaction of 100'000 algos (the amount required to initialize an account)
+// check if the other transaction is a pay transaction of 100'000 algos (the amount required to initialize an account)
 gtxn 0 TypeEnum
 int pay
 ==
-not_initescrow
+bz not_initescrow
+
 gtxn 0 Amount
 int 100000
 ==
 bz not_initescrow
 
-// Check that the other transaction is not a closing transaction
+// check if the other transaction is not a closing transaction
 gtxn 0 CloseRemainderTo
 global ZeroAddress
 ==
 bz not_initescrow
 
-// check that the application call is NoOp
+// check if the application call has a NoOp oncompletion
 txn OnCompletion
 int NoOp
 ==
 bz not_initescrow
 
-// Check that the call has 1 argument: the byte string "init_escrow"
+// check if the application call has 1 argument: the byte string "init_escrow"
 txn NumAppArgs
 int 1
 == 
@@ -286,16 +289,14 @@ byte "init_escrow"
 ==
 bz not_initescrow
 
-/* change state */
+//* Change the contract state *//
 
-// Change the contract state into waiting (waiting for a withdrawal request)
+// set the contract state to waiting (waiting for a withdrawal request)
 byte "gstate"
 byte "waiting"
 app_global_put
 
-/* change statevars */
-
-// Save the vault address into the global state
+// save the vault address into the global state
 byte "vault"
 gtxn 0 Receiver
 app_global_put
@@ -308,34 +309,34 @@ b approve
 ```java
 not_initescrow:
 
-/* check that we're calling the withdraw function */
+//* Check if we're calling the withdraw function *//
 
-// Check that there are no other transactions in this atomic group
+// check if there are no other transactions in this atomic group
 global GroupSize
 int 1
 ==
 bz not_withdraw
 
-// check that the contract is in the waiting state (waiting for a withdrawal request)
+// check if the contract is in the waiting state (waiting for a withdrawal request)
 byte "gstate"
 app_global_get
 byte "waiting"
 ==
 bz not_withdraw
 
-// Check that this transaction is sent by the contract creator
+// check if this transaction is sent by the contract creator
 txn Sender
 global CreatorAddress
 ==
 bz not_withdraw
 
-// check that the application call has a NoOp oncompletion
+// check if the application call has a NoOp oncompletion
 txn OnCompletion
 int NoOp
 ==
 bz not_withdraw
 
-// Check that the call has 3 arguments ("withdraw" and the two actual arguments)
+// check if the call has 3 arguments ("withdraw" and the two actual arguments: amount and receiver)
 txn NumAppArgs
 int 3
 ==
@@ -346,27 +347,25 @@ byte "withdraw"
 ==
 bz not_withdraw
 
-/* change state */
+//* Change the contract state *//
 
-// Set the global state to requested (withdrawal request ongoing)
+// set the contract state to requested (withdrawal request ongoing)
 byte "gstate"
 byte "requested"
 app_global_put
 
-/* change statevars */
-
-// Save the first argument (the amount that the user is requesting) into global amount
+// save the first argument (the amount that the user is requesting) into global amount
 byte "amount"
 txna ApplicationArgs 1
 btoi
 app_global_put
 
-// Save the second argument (the receiver of the withdrawal) into global receiver
+// save the second argument (the receiver of the withdrawal) into global receiver
 byte "receiver"
 txna ApplicationArgs 2
 app_global_put
 
-// Save current round into global request_time (so that the request can only be finalized n rounds afterwards)
+// save the current round into global request_time (so that the request can only be finalized wait_time rounds after)
 byte "request_time"
 global Round
 app_global_put
@@ -379,22 +378,22 @@ b approve
 ```java
 not_withdraw:
 
-/* check that we're calling the finalize function */
+//* Check if we're calling the finalize function *//
 
-// Check that the application call transactions goes with a pay transaction (the withdrawal)
+// check if the application call transactions is bundled with a pay transaction (the withdrawal)
 global GroupSize
 int 2
 ==
 bz not_finalize
 
-// check that the contract is in the withdrawal state (a withdrawal has been requested)
+// check if the contract is in the requested state (a withdrawal has been requested)
 byte "gstate"
 app_global_get
-byte "requesting"
+byte "requested"
 ==
 bz not_finalize
 
-// Check that at least wait_time rounds have passed since the withdraw request
+// check if the withdrawal wait time has passed since the withdraw request
 global Round
 byte "request_time"
 app_global_get
@@ -404,13 +403,13 @@ app_global_get
 >=
 bz not_finalize
 
-// Check that this transaction is sent by the contract creator
+// check if this transaction is sent by the contract creator
 txn Sender
 global CreatorAddress
 ==
 bz not_finalize
 
-// Check that the other transaction is a pay transaction of the amount requested from the escrow account to the requested receiver 
+// check if the other transaction is a pay transaction from the escrow account to the requested receiver of the amount previously requested 
 gtxn 0 TypeEnum
 int pay
 ==
@@ -434,19 +433,19 @@ app_global_get
 ==
 bz not_finalize
 
-// Check that the pay transaction is non-closing
+// check if the pay transaction is non-closing
 gtxn 0 CloseRemainderTo
 global ZeroAddress
 ==
 bz not_finalize
 
-// check that the application call has a NoOp oncompletion
+// check if the application call has a NoOp oncompletion
 txn OnCompletion
 int NoOp
 ==
 bz not_finalize
 
-// Check that the call has 1 argument ("finalize")
+// Check if the call has 1 argument ("finalize")
 txn NumAppArgs
 int 1
 ==
@@ -457,9 +456,9 @@ byte "finalize"
 ==
 bz not_finalize
 
-/* change state */
+//* Change the cntract state *//
 
-// Set the contract state back to waiting (waiting for a withdrawal request to be made)
+// set the contract state back to waiting (waiting for a withdrawal request to be made)
 byte "gstate"
 byte "waiting"
 app_global_put
@@ -473,35 +472,35 @@ b approve
 ```java
 not_finalize:
 
-/* check that we'ree calling the cancel function */
+//* Check if we're calling the cancel function *//
 
-// Check that there aren't other transactions in this atomic group
+// check if there aren't other transactions in this atomic group
 global GroupSize
 int 1
 ==
 bz not_cancel
 
-// Check that the contract is in state requesting (withdrawal request ongoing)
+// check if the contract is in state requested (withdrawal request ongoing)
 byte "gstate"
 app_global_get
-byte "requesting"
+byte "requested"
 ==
 bz not_cancel
 
-// Check that this transaction is sent by the recovery account
+// check if this transaction is sent by the recovery account
 txn Sender
 byte "recovery"
 app_global_get
 ==
 bz not_cancel
 
-// check that the application call has a NoOp oncompletion
+// check if the application call has a NoOp oncompletion
 txn OnCompletion
 int NoOp
 ==
 bz not_cancel
 
-// Check that the call has 1 argument ("cancel")
+// check if the application call has 1 argument ("cancel")
 txn NumAppArgs
 int 1
 ==
@@ -512,16 +511,15 @@ byte "cancel"
 ==
 bz not_cancel
 
-/* change state */
+//* Change the contract state *//
 
-// Set the contract state back to waiting (waiting for a withdrawal request)
+// set the contract state back to waiting (waiting for a withdrawal request)
 byte "gstate"
 byte "waiting"
 app_global_put
 
 b approve
 ```
-
 
 # Calling the functions
 
@@ -637,8 +635,400 @@ NoOp finalize() { }
 NoOp cancel() { }
 ```
 
-## Teal
+## Teal 
+### Stateful contract's approval program
+```java
+#pragma version 4
+
+//**************************
+//*   Creating the vault   *
+//**************************
+
+//* Check if we're calling the create function *//
+
+// check if there are no other transactions in this atomic group
+global GroupSize
+int 1
+==
+bz not_create
+
+// check if the application is being created with this transaction
+txn ApplicationID
+int 0
+==
+bz not_create
+
+// check if the call has 3 arguments ("create" + the two actual arguments: recovery account and wait_time)
+txn NumAppArgs
+int 3
+==
+bz not_create
+
+// check if the first argument is the byte string "create"
+txna ApplicationArgs 0
+byte "create"
+==
+bz not_create
+
+//* Change the contract state *//
+
+// set the contract state to init_escrow (waiting for escrow initialization)
+byte "gstate"
+byte "init_escrow"
+app_global_put
+
+// save the first argument (the address of the recovery account) into the global variable "recovery"
+byte "recovery"
+txna ApplicationArgs 1
+app_global_put
+
+// save the second argument (the time that must pass between withdrawal request and finalization) into the global variable "wait_time"
+byte "wait_time"
+txna ApplicationArgs 2
+btoi
+app_global_put
+
+b approve
+
+//*******************************
+//*   Initializing the escrow   *
+//*******************************
+
+not_create:
+
+//* Check if we're calling the init_escrow function *//
+
+// check if there is one other transactions in this atomic group: the payment transaction needed to initialize the escrow account
+global GroupSize
+int 2
+==
+bz not_initescrow
+
+// check if the application is currently waiting to initialize the escrow
+byte "gstate"
+app_global_get
+byte "init_escrow"
+==
+bz not_initescrow
+
+// check if this transaction is sent by the contract creator
+txn Sender
+global CreatorAddress
+==
+bz not_initescrow
+
+// check if the other transaction is a pay transaction of 100'000 algos (the amount required to initialize an account)
+gtxn 0 TypeEnum
+int pay
+==
+bz not_initescrow
+
+gtxn 0 Amount
+int 100000
+==
+bz not_initescrow
+
+// check if the other transaction is not a closing transaction
+gtxn 0 CloseRemainderTo
+global ZeroAddress
+==
+bz not_initescrow
+
+// check if the application call has a NoOp oncompletion
+txn OnCompletion
+int NoOp
+==
+bz not_initescrow
+
+// check if the application call has 1 argument: the byte string "init_escrow"
+txn NumAppArgs
+int 1
+== 
+bz not_initescrow
+
+txna ApplicationArgs 0
+byte "init_escrow"
+==
+bz not_initescrow
+
+//* Change the contract state *//
+
+// set the contract state to waiting (waiting for a withdrawal request)
+byte "gstate"
+byte "waiting"
+app_global_put
+
+// save the vault address into the global state
+byte "vault"
+gtxn 0 Receiver
+app_global_put
+
+b approve
+
+//*******************************
+//*   Requesting a withdrawal   *
+//*******************************
+
+not_initescrow:
+
+//* Check if we're calling the withdraw function *//
+
+// check if there are no other transactions in this atomic group
+global GroupSize
+int 1
+==
+bz not_withdraw
+
+// check if the contract is in the waiting state (waiting for a withdrawal request)
+byte "gstate"
+app_global_get
+byte "waiting"
+==
+bz not_withdraw
+
+// check if this transaction is sent by the contract creator
+txn Sender
+global CreatorAddress
+==
+bz not_withdraw
+
+// check if the application call has a NoOp oncompletion
+txn OnCompletion
+int NoOp
+==
+bz not_withdraw
+
+// check if the call has 3 arguments ("withdraw" and the two actual arguments: amount and receiver)
+txn NumAppArgs
+int 3
+==
+bz not_withdraw
+
+txna ApplicationArgs 0
+byte "withdraw"
+==
+bz not_withdraw
+
+//* Change the contract state *//
+
+// set the contract state to requested (withdrawal request ongoing)
+byte "gstate"
+byte "requested"
+app_global_put
+
+// save the first argument (the amount that the user is requesting) into global amount
+byte "amount"
+txna ApplicationArgs 1
+btoi
+app_global_put
+
+// save the second argument (the receiver of the withdrawal) into global receiver
+byte "receiver"
+txna ApplicationArgs 2
+app_global_put
+
+// save the current round into global request_time (so that the request can only be finalized wait_time rounds after)
+byte "request_time"
+global Round
+app_global_put
+
+b approve
+
+//*******************************
+//*   Finalizing a withdrawal   *
+//*******************************
+
+not_withdraw:
+
+//* Check if we're calling the finalize function *//
+
+// check if the application call transactions is bundled with a pay transaction (the withdrawal)
+global GroupSize
+int 2
+==
+bz not_finalize
+
+// check if the contract is in the requested state (a withdrawal has been requested)
+byte "gstate"
+app_global_get
+byte "requested"
+==
+bz not_finalize
+
+// check if the withdrawal wait time has passed since the withdraw request
+global Round
+byte "request_time"
+app_global_get
+byte "wait_time"
+app_global_get
++
+>=
+bz not_finalize
+
+// check if this transaction is sent by the contract creator
+txn Sender
+global CreatorAddress
+==
+bz not_finalize
+
+// check if the other transaction is a pay transaction from the escrow account to the requested receiver of the amount previously requested 
+gtxn 0 TypeEnum
+int pay
+==
+bz not_finalize
+
+gtxn 0 Amount
+byte "amount"
+app_global_get
+==
+bz not_finalize
+
+gtxn 0 Sender
+byte "vault"
+app_global_get
+==
+bz not_finalize
+
+gtxn 0 Receiver
+byte "receiver"
+app_global_get
+==
+bz not_finalize
+
+// check if the pay transaction is non-closing
+gtxn 0 CloseRemainderTo
+global ZeroAddress
+==
+bz not_finalize
+
+// check if the application call has a NoOp oncompletion
+txn OnCompletion
+int NoOp
+==
+bz not_finalize
+
+// Check if the call has 1 argument ("finalize")
+txn NumAppArgs
+int 1
+==
+bz not_finalize
+
+txna ApplicationArgs 0
+byte "finalize"
+==
+bz not_finalize
+
+//* Change the cntract state *//
+
+// set the contract state back to waiting (waiting for a withdrawal request to be made)
+byte "gstate"
+byte "waiting"
+app_global_put
+
+b approve
+
+//*******************************
+//*   Cancelling a withdrawal   *
+//*******************************
+
+not_finalize:
+
+//* Check if we're calling the cancel function *//
+
+// check if there aren't other transactions in this atomic group
+global GroupSize
+int 1
+==
+bz not_cancel
+
+// check if the contract is in state requested (withdrawal request ongoing)
+byte "gstate"
+app_global_get
+byte "requested"
+==
+bz not_cancel
+
+// check if this transaction is sent by the recovery account
+txn Sender
+byte "recovery"
+app_global_get
+==
+bz not_cancel
+
+// check if the application call has a NoOp oncompletion
+txn OnCompletion
+int NoOp
+==
+bz not_cancel
+
+// check if the application call has 1 argument ("cancel")
+txn NumAppArgs
+int 1
+==
+bz not_cancel
+
+txna ApplicationArgs 0
+byte "cancel"
+==
+bz not_cancel
+
+//* Change the contract state *//
+
+// set the contract state back to waiting (waiting for a withdrawal request)
+byte "gstate"
+byte "waiting"
+app_global_put
+
+b approve
+
+//****************************************
+//*   Function end / No function found   *
+//****************************************
+
+not_cancel:
+err
+
+approve:
+int 1
 ```
-...
-full teal code
+
+### Stateful contract's clear program
+```java
+#pragma version 4
+
+// approve any transaction
+int 1
+return
 ```
+
+### Stateless contract
+```java
+#pragma version 3
+
+// aseert that this transaction comes with an application call to our stateful contract
+gtxn 1 TypeEnum
+int appl
+==
+assert
+
+gtxn 1 ApplicationID
+int <APP-ID>
+==
+assert
+
+// assert that this transaction doesn't rekey
+txn RekeyTo
+global ZeroAddress
+==
+assert
+
+// assert that no fee is payed by this contract
+txn Fee
+int 0
+==
+assert
+
+// approve
+int 1
+```
+

@@ -1,0 +1,23 @@
+#pragma version 3
+
+gtxn 1 TypeEnum
+int appl
+==
+assert
+
+gtxn 1 ApplicationID
+int <APP-ID>
+==
+assert
+
+txn RekeyTo
+global ZeroAddress
+==
+assert
+
+txn Fee
+int 0
+==
+assert
+
+int 1
