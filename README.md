@@ -11,7 +11,7 @@ Since the TEAL implementation of vaults is quite complex, we first specify their
 ## Table of contents
 - [Overview](#overview)
   - [Table of contents](#table-of-contents)
-- [Design Overview](#design-overview)
+- [Specification](#specification)
   - [The contract state](#the-contract-state)
   - [The escrow account](#the-escrow-account)
   - [Creating the vault](#creating-the-vault)
@@ -39,22 +39,24 @@ Since the TEAL implementation of vaults is quite complex, we first specify their
   - [Teal](#teal)
 
 
-# Design Overview
+# Specification
 
 ## The contract state
 
 The contract state is stored in the following variables:
 
-* `wait_time` is the withdrawal wait time: how many rounds must pass between the withdrawal request and the withdrawal finalization
-* `recovery` is the address from which the cancel call must originate
-* `vault` is the escrow address, where the deposited funds will be kept
-
+* `wait_time` is the withdrawal wait time, i.e. the number of rounds that must pass between a withdrawal request and its finalization
+* `recovery` is the address from which the cancel action must originate
+* `vault` is the address of the escrow account where the deposited funds are stored
 * `request_time` is the round at which the withdrawal request has been submitted
-* `amount` is the amount of algos that were requested
-* `receiver` is the receiving address of the requested withdrawal
-* `gstate` is the contract state (waiting for escrow initialization, no withdrawal request in progress, withdrawal request in progress)
+* `amount` is the amount of algos to be withdrawn
+* `receiver` is the address which can withdraw the algos
+* `gstate` is the contract state: 
+  * `init_escrow`: the contract is waiting for escrow initialization
+  * `waiting`: there is no pending withdrawal request
+  * `requested`: there is a pending withdrawal request
 
-The first 3 values are constant throughout the life of the contract, while the last 4 change with each withdrawal request.
+The variables `wait_time`, `recovery` and `vault` are initialized at contract creation and constant throughout the contract lifetime, while the other variables are updated upon each withdrawal request.
 
 ## The escrow account
 
