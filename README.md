@@ -1008,9 +1008,8 @@ int 1
 ```java
 #pragma version 4
 
-// approve any transaction
-int 1
-return
+// reject any transaction
+err
 ```
 
 ### Stateless contract
