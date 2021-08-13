@@ -2,11 +2,14 @@
 
 Vaults are a security mechanism to prevent cryptocurrency from being immediately withdrawn. When a user wants to withdraw some crypto from a vault, they must first issue a request, and the withdraw is finalized only after a certain wait time has passed since the request. During the wait time, the request can be cancelled by using a recovery key. Vaults mitigate the risk that the user's private key is stolen: whenever an adversary attempts a withdraw with a stolen private key, the legit user can cancel the operation through the recovery key.
 
-```
-todo add references
-```
+Vaults are quite popular in blockchain ecosystems. For instance, they are available on the following crypto wallets:
+* [Coinbase](https://help.coinbase.com/en/coinbase/getting-started/other/vaults-faq)
+* [Bitcoin Suisse](https://www.bitcoinsuisse.com/vault)
+* [Electrum Vault](https://github.com/bitcoinvault/electrum-vault)
 
-Since the TEAL implementation of vaults is quite complex, we first specify their functionality in AlgoML, a novel specification language for Algorand contracts, that compiles into TEAL scripts.     
+The purpose of this tutorial is to create a **decentralized** vault as an Algorand smart contract.
+
+Since the TEAL implementation of vaults is quite complex, we first specify their functionality in AlgoML, a novel specification language for Algorand contracts, that compiles into TEAL scripts.
 
 ## Table of contents
 - [Overview](#overview)
