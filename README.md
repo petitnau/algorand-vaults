@@ -73,8 +73,10 @@ The escrow account used by the vault is a stateless contract that releases funds
 
 ## Creating the vault
 
-Any user should be able to create a vault, providing the recovery address and the withdrawal wait time (the amount of rounds that must pass between withdrawal request and withdrawal finalization). 
+Any user can create a vault, providing the recovery address and the withdrawal wait time. 
 <!-- Once the contract gets created, the user will need to provide the escrow account address (it won't be possible to provide it on creation, since the escrow account needs the application ID). -->
+
+We specify the behaviour of this action in AlgoML as follows:
 
 <!-- no toc -->
 **AlgoML**
@@ -85,8 +87,12 @@ Create create(address recovery, int wait_time) {
     glob.wait_time = wait_time
 }
 ```
-
-To call the *create* function the user must pass two parameters: the recovery address, and the withdrawal wait time. When this function is called, the contract gets created and its two global state variables `recovery` and `wait_time` are initializated, while the contract is put into the `init_escrow` state (waiting for the escrow initialization).
+The *create* function requires two parameters: the recovery address, and the withdrawal wait time. When this function is called, the contract is created and its two global state variables `recovery` and `wait_time` are initializated.
+The clause 
+```java
+@gstate ->init_escrow
+```
+means that after the create action is performed, the new state of the contract is ``init_escrow``. 
 
 ## Initializing the escrow 
 
