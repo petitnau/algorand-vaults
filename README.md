@@ -78,8 +78,6 @@ Any user can create a vault, providing the recovery address and the withdrawal w
 
 We specify the behaviour of this action in AlgoML as follows:
 
-<!-- no toc -->
-**AlgoML**
 ```java
 @gstate ->init_escrow
 Create create(address recovery, int wait_time) {
@@ -97,8 +95,6 @@ means that after the create action is performed, the new state of the contract i
 ## Initializing the escrow 
 
 After the contract is created, the vault owner must connect the escrow account to the stateful contract, in order to have a place to store the deposited funds.
-
-**AlgoML**
 ```java
 @gstate init_escrow->waiting
 @from creator
@@ -117,7 +113,6 @@ The vault owner should be able to deposit funds into the vault. A simple pay tra
 ## Requesting a withdrawal
 Once the contract is created, and the escrow account connected to the stateful contract, the vault creator can request a withdrawal. To do so, they must declare the amount of algos that they want to withdraw, and the address of the account that will receive the funds. The contract will need to store the declared receiver of the funds, and the amount of funds that will be withdrawn, while also storing the round at which the withdrawal was requested.
 
-**AlgoML**
 ```java
 @gstate waiting->requested
 @round *$curr_round
@@ -136,7 +131,6 @@ To call it, the creator must pass the amount that they wants to withdraw, and th
 
 After the withdrawal wait period has passed, the vault owner can ask for the request to be finalized, thus receiving the funds and putting the contract back into a state where other requests are accepted.
 
-**AlgoML**
 ```java
 @gstate requested->waiting
 @round (glob.request_time + glob.wait_time,)
