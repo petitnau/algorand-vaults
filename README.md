@@ -62,7 +62,7 @@ The contract state is stored in the following variables:
   * `waiting`: there is no pending withdrawal request
   * `requested`: there is a pending withdrawal request
 
-The variables `wait_time`, `recovery` and `vault` are initialized at contract creation and constant throughout the contract lifetime, while the other variables are updated upon each withdrawal request.
+The variables `wait_time`, `recovery` and `vault` are initialized at contract creation, and they remain constant throughout the contract lifetime. Instead, the other variables are updated upon each withdrawal request.
 
 ## The escrow account
 
