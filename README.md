@@ -14,7 +14,7 @@ Since the TEAL implementation of vaults is quite complex, we first specify their
 ## Table of contents
 - [Overview](#overview)
   - [Table of contents](#table-of-contents)
-- [Specification](#specification)
+- [AlgoML specification](#algoml-specification)
   - [Contract state](#contract-state)
   - [Escrow account](#escrow-account)
   - [Creating the vault](#creating-the-vault)
@@ -23,7 +23,7 @@ Since the TEAL implementation of vaults is quite complex, we first specify their
   - [Requesting a withdrawal](#requesting-a-withdrawal)
   - [Finalizing a request](#finalizing-a-request)
   - [Cancelling a request](#cancelling-a-request)
-- [Implementation](#implementation)
+- [TEAL implementation](#teal-implementation)
   - [Escrow account](#escrow-account)
   - [Creating the vault](#creating-the-vault-1)
   - [Escrow initialization](#escrow-initialization)
@@ -45,7 +45,7 @@ Since the TEAL implementation of vaults is quite complex, we first specify their
     - [Stateless contract](#stateless-contract)
 
 
-# Specification
+# AlgoML specification
 
 ## Contract state
 
@@ -149,7 +149,6 @@ If the owner of the contract notices a withdrawal request that they have not mad
 
 Notice that, since to cancel a withdrawal request the recovery account private key is needed, anyone who steals the vault creator private key (but not the recovery key) won't be able to cancel any withdrawal request.
 
-**AlgoML**
 ```java
 @gstate requesting->waiting
 @from glob.recovery
@@ -159,7 +158,7 @@ NoOp cancel() { }
 The cancel function can only be called **from the recovery address**, and only after a withdrawal request has been sent (therefore, only while the contract is in state `requesting`). Once called, the contract will go back to the `waiting` state, thus disabling the finalize function, and requiring another withdraw call to be made for any further withdrawal request.
 
 
-# Implementation
+# TEAL implementation
 
 ## Escrow account
 **Teal**
