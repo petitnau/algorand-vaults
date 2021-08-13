@@ -15,8 +15,8 @@ Since the TEAL implementation of vaults is quite complex, we first specify their
 - [Overview](#overview)
   - [Table of contents](#table-of-contents)
 - [Specification](#specification)
-  - [The contract state](#the-contract-state)
-  - [The escrow account](#the-escrow-account)
+  - [Contract state](#contract-state)
+  - [Escrow account](#escrow-account)
   - [Creating the vault](#creating-the-vault)
   - [Initializing the escrow](#initializing-the-escrow)
   - [Depositing funds](#depositing-funds)
@@ -47,7 +47,7 @@ Since the TEAL implementation of vaults is quite complex, we first specify their
 
 # Specification
 
-## The contract state
+## Contract state
 
 The contract state is stored in the following variables:
 
@@ -64,12 +64,12 @@ The contract state is stored in the following variables:
 
 The variables `wait_time`, `recovery` and `vault` are initialized at contract creation, and they remain constant throughout the contract lifetime. Instead, the other variables are updated upon each withdrawal request.
 
-## The escrow account
+## Escrow account
 
-The vault's escrow account is a stateless contract that approves every transaction as long as:
-1. the stateful contract partecipates in the approval decision (a call to the stateful contract is in the group transaction)
-2. the stateless contract doesn't have to pay any fees
-3. the stateless contract is not sending a rekey transaction
+The escrow account used by the vault is a stateless contract that releases funds provided that:
+1. the stateful contract participates in the transaction group
+1. the escrow does not pay any transaction fees
+1. the escrow does not send a rekey transaction
 
 ## Creating the vault
 
@@ -90,7 +90,7 @@ To call the *create* function the user must pass two parameters: the recovery ad
 
 ## Initializing the escrow 
 
-After the contract gets created, the vault owner must connect the escrow account to the stateful contract, in order to have a place to store the deposited funds.
+After the contract is created, the vault owner must connect the escrow account to the stateful contract, in order to have a place to store the deposited funds.
 
 **AlgoML**
 ```java
