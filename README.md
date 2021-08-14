@@ -93,7 +93,7 @@ Any user can create a vault, providing the recovery address and the withdrawal w
 We specify the behaviour of this action in AlgoML as follows:
 ```java
 @gstate ->init_escrow
-create(address recovery, int wait_time) {
+Create create(address recovery, int wait_time) {
     glob.recovery = recovery
     glob.wait_time = wait_time
 }
@@ -114,7 +114,7 @@ This is specified in AlgoML as follows:
 @gstate init_escrow->waiting
 @from creator
 @pay 100000 : * -> *$vault
-NoOp set_escrow() {
+set_escrow() {
     glob.vault = vault
 }
 ```
@@ -627,7 +627,7 @@ glob mut int amount
 glob mut address receiver
 
 @gstate ->init_escrow
-create(address recovery, int wait_time) {
+Create create(address recovery, int wait_time) {
     glob.recovery = recovery
     glob.wait_time = wait_time
 }
