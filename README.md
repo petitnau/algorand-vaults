@@ -9,7 +9,7 @@ Vaults are quite popular in blockchain ecosystems. For instance, they are availa
 
 The purpose of this tutorial is to create a **decentralized** vault as an Algorand smart contract.
 
-Since the TEAL implementation of vaults is quite complex, we first specify their functionality in AlgoML, a novel DSL for Algorand contracts, that compiles into TEAL scripts.
+Since the TEAL implementation of vaults is quite complex, we first specify their functionality in AlgoML (after *Algorand Modelling Language*), a novel DSL for Algorand contracts, that compiles into TEAL scripts.
 
 ## Table of contents
 - [Overview](#overview)
@@ -142,7 +142,7 @@ withdraw(int amount, address receiver) {
     glob.request_time = curr_round
 }
 ```
-The `withdraw` function can only be called by the creator, and only while the contract is in state waiting for a withdrawal request. The function body saves the values of the parameters and the current round in the contract state. The precondition `@gstate waiting->requested` also ensures that the next state will be `requested`. 
+The `withdraw` function can only be called by the creator, and only while the contract is in state waiting for a withdrawal request. The function body saves the values of the parameters and the current round in the contract state. The precondition `@gstate waiting->requested` also ensures that the next state will be `requested`. Note that we do *not* require that the vault contains at least `amount` algos: indeed, this is not strictly necessary, as the creator can fund the vault after the request has been made.
 
 ## Finalizing a request
 
