@@ -47,7 +47,7 @@ Since the TEAL implementation of vaults is quite complex, we first specify their
 
 # AlgoML specification
 
-We specify vaults in [AlgoML](https://github.com/petitnau(algoml), a high-level DSL for Algorand contracts that compiles into TEAL. Roughly, an AlgoML specification is a sequence of clauses of the form:
+We specify vaults in [AlgoML](https://github.com/petitnau/algoml), a high-level DSL for Algorand contracts that compiles into TEAL. Roughly, an AlgoML specification is a sequence of clauses of the form:
 ```java
 @precondition1
 ...
