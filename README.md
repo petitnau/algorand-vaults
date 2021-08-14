@@ -9,7 +9,7 @@ Vaults are quite popular in blockchain ecosystems. For instance, they are availa
 
 The purpose of this tutorial is to create a **decentralized** vault as an Algorand smart contract.
 
-Since the TEAL implementation of vaults is quite complex, we first specify their functionality in AlgoML, a novel specification language for Algorand contracts, that compiles into TEAL scripts.
+Since the TEAL implementation of vaults is quite complex, we first specify their functionality in AlgoML, a novel DSL for Algorand contracts, that compiles into TEAL scripts.
 
 ## Table of contents
 - [Overview](#overview)
@@ -46,6 +46,21 @@ Since the TEAL implementation of vaults is quite complex, we first specify their
 
 
 # AlgoML specification
+
+We specify vaults in [AlgoML](https://github.com/petitnau(algoml), a high-level DSL for Algorand contracts that compiles into TEAL. Roughly, an AlgoML specification is a sequence of clauses of the form:
+```java
+@precondition1
+...
+@preconditionK
+...
+foo(x1,...,xn) {
+  // state update
+  ...
+}
+```
+The intuition is that the function ``foo`` is enabled whenever all the preconditions are respected. Executing ``foo`` results in a state update, specified in the function body. Preconditions may have various forms: for instance, they can be predicates on the contract state, or checks that certain transactions belong to the group where the function is called.
+
+We refer to the [AlgoML whitepaper](https://notion.so/petitnau/Alg0ML) for More details on the use of AlgoML.
 
 ## Contract state
 
