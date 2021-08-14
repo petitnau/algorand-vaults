@@ -156,9 +156,11 @@ After the withdrawal wait period has passed, the vault creator can ask for the r
 finalize() { }
 ```
 
-The *finalize* function can only be called by the contract creator while in the `requested` state, and only after `wait_time` rounds have passed since the `requested_time`. To call this function, a pay transaction must be bundled with the application call. This pay transaction must have the vault address as a sender, and the amount and receiver that were saved in the global state (the ones that were declared with the withdraw call). 
-
-After this function call, the contract will be put back into `waiting` state (accepting other another request).
+The `finalize` function can only be called by the vault creator while, provided that the current state is `requested`, and `wait_time` rounds have passed since the `requested_time`. To call this function, the function call must be bundled with a pay transaction , as required by the precondition:
+```java
+@pay glob.amount : vault -> glob.receiver
+```
+This transaction must transfer have the vault the amount of algos specified in the request from the vault to the declared receiver. After this function call, the contract state is set to `waiting`, where the contract can accept another request.
 
 ## Cancelling a request 
 
