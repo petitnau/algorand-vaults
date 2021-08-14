@@ -1,6 +1,6 @@
 # Overview
 
-Vaults are a security mechanism to prevent cryptocurrency from being immediately withdrawn. When a user wants to withdraw some crypto from a vault, they must first issue a request, and the withdraw is finalized only after a certain wait time has passed since the request. During the wait time, the request can be cancelled by using a recovery key. Vaults mitigate the risk that the user's private key is stolen: whenever an adversary attempts a withdraw with a stolen private key, the legit user can cancel the operation through the recovery key.
+Vaults are a security mechanism to prevent cryptocurrency from being immediately withdrawn. When users want to withdraw some crypto from a vault, they must first issue a request, and the withdrawal is finalized only after a certain wait time has passed since the request. During the wait time, the request can be cancelled by using a recovery key. Vaults mitigate the risk that the user's private key is stolen: whenever an adversary attempts to withdraw using a stolen private key, the legit user can cancel the operation through the recovery key.
 
 Vaults are quite popular in blockchain ecosystems. For instance, they are available on the following crypto wallets:
 * [Coinbase](https://help.coinbase.com/en/coinbase/getting-started/other/vaults-faq)
@@ -93,7 +93,7 @@ Any user can create a vault, providing the recovery address and the withdrawal w
 We specify the behaviour of this action in AlgoML as follows:
 ```java
 @gstate ->init_escrow
-Create create(address recovery, int wait_time) {
+create(address recovery, int wait_time) {
     glob.recovery = recovery
     glob.wait_time = wait_time
 }
@@ -114,7 +114,7 @@ This is specified in AlgoML as follows:
 @gstate init_escrow->waiting
 @from creator
 @pay 100000 : * -> *$vault
-NoOp init_escrow() {
+init_escrow() {
     glob.vault = vault
 }
 ```
@@ -124,13 +124,14 @@ NoOp init_escrow() {
 Any user can deposit algos into the vault. Since paying algos to an account cannot be constrained in Algorand, this part of the specification is given by default, so it does not require a specific clause in AlgoML. 
 
 ## Requesting a withdrawal
-Once the contract is created, and the escrow account connected to the stateful contract, the vault creator can request a withdrawal. To do so, they must declare the amount of algos that they want to withdraw, and the address of the account that will receive the funds. The contract will need to store the declared receiver of the funds, and the amount of funds that will be withdrawn, while also storing the round at which the withdrawal was requested.
+
+Once the contract is created and the escrow connected to the contract, the vault creator can request a withdrawal. To do so, they must declare the amount of algos that they want to withdraw, and the address of the account that will receive the funds. The contract will need to store the declared receiver of the funds, and the amount of funds that will be withdrawn, while also storing the round at which the withdrawal was requested.
 
 ```java
 @gstate waiting->requested
 @round *$curr_round
 @from creator
-NoOp withdraw(int amount, address receiver) {
+withdraw(int amount, address receiver) {
     glob.amount = amount
     glob.receiver = receiver
     glob.request_time = curr_round
@@ -149,7 +150,7 @@ After the withdrawal wait period has passed, the vault creator can ask for the r
 @round (glob.request_time + glob.wait_time,)
 @from creator
 @pay glob.amount : vault -> glob.receiver
-NoOp finalize() { }
+finalize() { }
 ```
 
 The *finalize* function can only be called by the contract creator while in the `requested` state, and only after `wait_time` rounds have passed since the `requested_time`. To call this function, a pay transaction must be bundled with the application call. This pay transaction must have the vault address as a sender, and the amount and receiver that were saved in the global state (the ones that were declared with the withdraw call). 
@@ -165,7 +166,7 @@ Notice that, since to cancel a withdrawal request the recovery account private k
 ```java
 @gstate requesting->waiting
 @from glob.recovery
-NoOp cancel() { }
+cancel() { }
 ```
 
 The cancel function can only be called **from the recovery address**, and only after a withdrawal request has been sent (therefore, only while the contract is in state `requesting`). Once called, the contract will go back to the `waiting` state, thus disabling the finalize function, and requiring another withdraw call to be made for any further withdrawal request.
