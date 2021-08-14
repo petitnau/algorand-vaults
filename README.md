@@ -107,7 +107,7 @@ means that after the create action is performed, the new state of the contract i
 
 ## Initializing the escrow 
 
-Once the contract has been created, the vault owner must invoke the `init_escrow` function to connect the contract with an escrow account. The escrow will store all the funds deposited in the vault.
+Once the contract has been created, the vault creator must invoke the `init_escrow` function to connect the contract with an escrow account. The escrow will store all the funds deposited in the vault.
 To call the `init_escrow` function, the contract must be in the `init_escrow` state, and must be called from the contract creator. The application call must also come bundled with a pay transaction, with an amount of 100'000 micro-algos (the amount needed to initialize an account). When called, the vault address is saved into the global state, and the contract state is set to `waiting` (waiting for a withdrawal request).
 This is specified in AlgoML as follows: 
 ```java
@@ -142,7 +142,7 @@ To call it, the creator must pass the amount that they wants to withdraw, and th
 
 ## Finalizing a request
 
-After the withdrawal wait period has passed, the vault owner can ask for the request to be finalized, thus receiving the funds and putting the contract back into a state where other requests are accepted.
+After the withdrawal wait period has passed, the vault creator can ask for the request to be finalized, thus receiving the funds and putting the contract back into a state where other requests are accepted.
 
 ```java
 @gstate requested->waiting
@@ -158,7 +158,7 @@ After this function call, the contract will be put back into `waiting` state (ac
 
 ## Cancelling a request 
 
-If the owner of the contract notices a withdrawal request that they have not made (and therefore that someone has access to their private key), they can cancel the transaction using their recovery account, and then proceed to withdraw all the funds into a more secure account.
+If the vault creator notices a withdrawal request that they have not made (and therefore that someone has access to their private key), they can cancel the transaction using their recovery account, and then proceed to withdraw all the funds into a more secure account.
 
 Notice that, since to cancel a withdrawal request the recovery account private key is needed, anyone who steals the vault creator private key (but not the recovery key) won't be able to cancel any withdrawal request.
 
@@ -573,7 +573,7 @@ $ goal clerk rawsend -f txn_signed.tx
 
 ## Depositing funds
 
-To deposit funds into the contract, the vault owner can simply send a pay transaction to the escrow account.
+To deposit funds into the contract, the vault creator can simply send a pay transaction to the escrow account.
 
 ```bash
 $ goal clerk send --from={ACCOUNT} --to={ESCROWACCOUNT} --amount=9876 --out=txn.tx -d ~/node/data
