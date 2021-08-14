@@ -56,60 +56,60 @@ b approve
 
 not_create:
 
-//* Check if we're calling the init_escrow function *//
+//* Check if we're calling the set_escrow function *//
 
 // check if there is one other transactions in this atomic group: the payment transaction needed to initialize the escrow account
 global GroupSize
 int 2
 ==
-bz not_initescrow
+bz not_setescrow
 
 // check if the application is currently waiting to initialize the escrow
 byte "gstate"
 app_global_get
 byte "init_escrow"
 ==
-bz not_initescrow
+bz not_setescrow
 
 // check if this transaction is sent by the contract creator
 txn Sender
 global CreatorAddress
 ==
-bz not_initescrow
+bz not_setescrow
 
 // check if the other transaction is a pay transaction of 100'000 algos (the amount required to initialize an account)
 gtxn 0 TypeEnum
 int pay
 ==
-bz not_initescrow
+bz not_setescrow
 
 gtxn 0 Amount
 int 100000
 ==
-bz not_initescrow
+bz not_setescrow
 
 // check if the other transaction is not a closing transaction
 gtxn 0 CloseRemainderTo
 global ZeroAddress
 ==
-bz not_initescrow
+bz not_setescrow
 
 // check if the application call has a NoOp oncompletion
 txn OnCompletion
 int NoOp
 ==
-bz not_initescrow
+bz not_setescrow
 
-// check if the application call has 1 argument: the byte string "init_escrow"
+// check if the application call has 1 argument: the byte string "set_escrow"
 txn NumAppArgs
 int 1
 == 
-bz not_initescrow
+bz not_setescrow
 
 txna ApplicationArgs 0
-byte "init_escrow"
+byte "set_escrow"
 ==
-bz not_initescrow
+bz not_setescrow
 
 //* Change the contract state *//
 
@@ -129,7 +129,7 @@ b approve
 //*   Requesting a withdrawal   *
 //*******************************
 
-not_initescrow:
+not_setescrow:
 
 //* Check if we're calling the withdraw function *//
 
@@ -349,4 +349,43 @@ not_cancel:
 err
 
 approve:
+int 1
+```
+
+### Stateful contract's clear program
+```java
+#pragma version 4
+
+// reject any transaction
+err
+```
+
+### Stateless contract
+```java
+#pragma version 3
+
+// aseert that this transaction comes with an application call to our stateful contract
+gtxn 1 TypeEnum
+int appl
+==
+assert
+
+gtxn 1 ApplicationID
+int <APP-ID>
+==
+assert
+
+// assert that this transaction doesn't rekey
+txn RekeyTo
+global ZeroAddress
+==
+assert
+
+// assert that no fee is payed by this contract
+txn Fee
+int 0
+==
+assert
+
+// approve
 int 1

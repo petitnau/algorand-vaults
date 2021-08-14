@@ -24,7 +24,7 @@ Since the TEAL implementation of vaults is quite complex, we first specify their
   - [Finalizing a request](#finalizing-a-request)
   - [Cancelling a request](#cancelling-a-request)
 - [TEAL implementation](#teal-implementation)
-  - [Escrow account](#escrow-account)
+  - [Escrow account](#escrow-account-1)
   - [Creating the vault](#creating-the-vault-1)
   - [Escrow initialization](#escrow-initialization)
   - [Requesting a withdrawal](#requesting-a-withdrawal-1)
@@ -107,14 +107,14 @@ means that after the create action is performed, the new state of the contract i
 
 ## Initializing the escrow 
 
-Once the contract has been created, the vault creator must invoke the `init_escrow` function to connect the contract with an escrow account. The escrow will store all the funds deposited in the vault.
-To call the `init_escrow` function, the contract must be in the `init_escrow` state, and must be called from the contract creator. The application call must also come bundled with a pay transaction, with an amount of 100'000 micro-algos (the amount needed to initialize an account). When called, the vault address is saved into the global state, and the contract state is set to `waiting` (waiting for a withdrawal request).
+Once the contract has been created, the vault creator must invoke the `set_escrow` function to connect the contract with an escrow account. The escrow will store all the funds deposited in the vault.
+To call the `set_escrow` function, the contract must be in the `init_escrow` state, and must be called from the contract creator. The application call must also come bundled with a pay transaction, with an amount of 100'000 micro-algos (the amount needed to initialize an account). When called, the vault address is saved into the global state, and the contract state is set to `waiting` (waiting for a withdrawal request).
 This is specified in AlgoML as follows: 
 ```java
 @gstate init_escrow->waiting
 @from creator
 @pay 100000 : * -> *$vault
-init_escrow() {
+NoOp set_escrow() {
     glob.vault = vault
 }
 ```
@@ -273,54 +273,54 @@ not_create:
 global GroupSize
 int 2
 ==
-bz not_initescrow
+bz not_setescrow
 
 // check if the application is currently waiting to initialize the escrow
 byte "gstate"
 app_global_get
 byte "init_escrow"
 ==
-bz not_initescrow
+bz not_setescrow
 
 // check if this transaction is sent by the contract creator
 txn Sender
 global CreatorAddress
 ==
-bz not_initescrow
+bz not_setescrow
 
 // check if the other transaction is a pay transaction of 100'000 algos (the amount required to initialize an account)
 gtxn 0 TypeEnum
 int pay
 ==
-bz not_initescrow
+bz not_setescrow
 
 gtxn 0 Amount
 int 100000
 ==
-bz not_initescrow
+bz not_setescrow
 
 // check if the other transaction is not a closing transaction
 gtxn 0 CloseRemainderTo
 global ZeroAddress
 ==
-bz not_initescrow
+bz not_setescrow
 
 // check if the application call has a NoOp oncompletion
 txn OnCompletion
 int NoOp
 ==
-bz not_initescrow
+bz not_setescrow
 
-// check if the application call has 1 argument: the byte string "init_escrow"
+// check if the application call has 1 argument: the byte string "set_escrow"
 txn NumAppArgs
 int 1
 == 
-bz not_initescrow
+bz not_setescrow
 
 txna ApplicationArgs 0
-byte "init_escrow"
+byte "set_escrow"
 ==
-bz not_initescrow
+bz not_setescrow
 
 //* Change the contract state *//
 
@@ -340,7 +340,7 @@ b approve
 ## Requesting a withdrawal
 **Teal**
 ```java
-not_initescrow:
+not_setescrow:
 
 //* Check if we're calling the withdraw function *//
 
@@ -561,20 +561,20 @@ b approve
 To call the create function, a simple Application Create transaction can be sent to the blockchain, with the string "create" as a parameter.
 
 ```bash
-$ goal app create --app-args "string:create" --creator {ACCOUNT} --approval-prog "approvalprog.teal" --clear-prog "clearprog.teal" --global-byteslices 4 --global-ints 3 --from={ACCOUNT}
+goal app create --app-arg "str:create" --app-arg "addr:{RECOVERY-ADDRESS}" --app-arg "int:{WAIT-TIME}" --creator "{CREATOR-ADDRESS}" --approval-prog "vault_approval.teal" --clear-prog "vault_clear.teal" --global-byteslices 4 --global-ints 3 --local-byteslices 0 --local-ints 0
 ```
-
 ## Initializing the escrow
 
-To call the init_escrow function, the user must submit a group transaction with an application call (with init_escrow as an argument), and a payment transaction of 100'000 algos to the escrow account.
+To call the set_escrow function, the user must submit a group transaction with an application call (with set_escrow as an argument), and a payment transaction of 100'000 micro-algos to the escrow account.
 
 ```bash
-$ goal clerk send --from={ACCOUNT} --to={ESCROWACCOUNT} --amount=100000 --out=txn1.tx -d ~/node/data
-$ goal app call --app-id {APPID}  --app-arg "str:init_escrow" --from={ACCOUNT}  --out=txn2.tx -d ~/node/data
-$ cat txn1.tx txn2.tx > txn_combined.tx 
-$ goal clerk group -i txn_combined.tx -o txn_grouped.tx
-$ goal clerk sign -i txn_grouped.tx -o txn_signed.tx 
-$ goal clerk rawsend -f txn_signed.tx
+goal clerk compile "vault_escrow.teal"
+goal clerk send --from="{CREATOR-ADDRESS}" --to="7WAUA5CBMY7BX6NRCYAV2DRRC5ATCIZQRGCCTCKNUNSAWDIFXZVT6CQOLI" --amount=100000 --out=txn1.tx
+goal app call --app-id {APP-ID} --app-arg "str:set_escrow" --from="{CREATOR-ADDRESS}"  --out=txn2.tx
+cat txn1.tx txn2.tx > txn_combined.tx 
+goal clerk group -i txn_combined.tx -o txn_grouped.tx
+goal clerk sign -i txn_grouped.tx -o txn_signed.tx 
+goal clerk rawsend -f txn_signed.tx
 ```
 
 ## Depositing funds
@@ -582,9 +582,7 @@ $ goal clerk rawsend -f txn_signed.tx
 To deposit funds into the contract, the vault creator can simply send a pay transaction to the escrow account.
 
 ```bash
-$ goal clerk send --from={ACCOUNT} --to={ESCROWACCOUNT} --amount=9876 --out=txn.tx -d ~/node/data
-$ goal clerk sign -i txn.tx -o txn_signed.tx 
-$ goal clerk rawsend -f txn_signed.tx
+goal clerk send --from="{CREATOR-ADDRESS}" --to="7WAUA5CBMY7BX6NRCYAV2DRRC5ATCIZQRGCCTCKNUNSAWDIFXZVT6CQOLI" --amount={DEPOSIT-AMOUNT}
 ```
 
 ## Requesting a withdrawal
@@ -592,9 +590,7 @@ $ goal clerk rawsend -f txn_signed.tx
 To call the withdraw function, an application call with the parameters "withdraw", an integer (the amount to be withdrawn), and a string (the receiving address), must be submitted.
 
 ```bash
-$ goal app call --app-arg "string:withdraw" "int:{AMOUNT}" "string:{RECEIVER}" --from={ACCOUNT} --out=txn1.tx -d ~/node/data
-$ goal clerk sign -i txn1.tx txn_signed.tx
-$ goal clerk rawsend -i txn_signed.tx
+goal app call --app-id {APP-ID} --app-arg "str:withdraw" --app-arg "int:{WITHDRAW-AMOUNT}" --app-arg "addr:{WITHDRAW-RECEIVER}" --from="{CREATOR-ADDRESS}"
 ```
 
 ## Finalizing a request
@@ -602,14 +598,16 @@ $ goal clerk rawsend -i txn_signed.tx
 To call the finalize function, a pay transaction from the escrow account to the previously declared receiving account, of the previously declared amount must be sent, together with an application call with the string "finalize" as a parameter.
 
 ```bash
-$ goal clerk send --from={ACCOUNT} --to={ESCROWACCOUNT} --amount={AMOUNT} --out=txn1.tx -d ~/node/data
-$ goal app call --app-id {APPID}  --app-arg "str:finalize" --from={ACCOUNT}  --out=txn2.tx -d ~/node/data
-$ cat txn1.tx txn2.tx > txn_combined.tx 
-$ goal clerk group -i txn_combined.tx -o txn_grouped.tx
-$ goal clerk sign -i txn_grouped.tx -o txn_signed.tx 
-$ goal clerk rawsend -f txn_signed.tx
+goal clerk send --from-program="vault_escrow.teal" --to="{WITHDRAW-RECEIVER}" --amount={WITHDRAW-AMOUNT} --fee 0 --out=txn1.tx 
+goal app call --app-id {APP-ID} --app-arg "str:finalize" --from="{CREATOR-ADDRESS}" --fee 2000 --out=txn2.tx
 
-#! TODO: non va firmata la paytxn dall'escrow
+cat txn1.tx txn2.tx > txn_combined.tx
+goal clerk group -i txn_combined.tx -o txn_grouped.tx 
+goal clerk split -i txn_grouped.tx -o txn_split.tx 
+
+goal clerk sign -i txn_split-1.tx -o txn1_signed.tx
+cat txn_split-0.tx txn1_signed.tx > txn_signed.tx
+goal clerk rawsend -f txn_signed.tx
 ```
 
 ## Cancelling a request
@@ -617,11 +615,8 @@ $ goal clerk rawsend -f txn_signed.tx
 To call the cancel function, a simple application call with the string "finalize" as a parameter can be sent (from the recovery address).
 
 ```bash
-$ goal app call --app-id {APPID}  --app-arg "str:finalize" --from={RECOVERYACCOUNT}  --out=txn1.tx -d ~/node/data
-$ goal clerk sign -i txn1.tx -o txn_signed.tx 
-$ goal clerk rawsend -f txn_signed.tx
+goal app call --app-id {APP-ID} --app-arg "str:cancel" --from="{RECOVERY-ADDRESS}"
 ``` 
-
 
 # Full Code
 
@@ -644,7 +639,7 @@ Create create(address recovery, int wait_time) {
 @gstate init_escrow->waiting
 @from creator
 @pay 100000 : * -> *$vault
-NoOp init_escrow() {
+NoOp set_escrow() {
     glob.vault = vault
 }
     
@@ -670,6 +665,7 @@ NoOp cancel() { }
 
 ## Teal 
 ### Stateful contract's approval program
+
 ```java
 #pragma version 4
 
@@ -729,60 +725,60 @@ b approve
 
 not_create:
 
-//* Check if we're calling the init_escrow function *//
+//* Check if we're calling the set_escrow function *//
 
 // check if there is one other transactions in this atomic group: the payment transaction needed to initialize the escrow account
 global GroupSize
 int 2
 ==
-bz not_initescrow
+bz not_setescrow
 
 // check if the application is currently waiting to initialize the escrow
 byte "gstate"
 app_global_get
 byte "init_escrow"
 ==
-bz not_initescrow
+bz not_setescrow
 
 // check if this transaction is sent by the contract creator
 txn Sender
 global CreatorAddress
 ==
-bz not_initescrow
+bz not_setescrow
 
 // check if the other transaction is a pay transaction of 100'000 algos (the amount required to initialize an account)
 gtxn 0 TypeEnum
 int pay
 ==
-bz not_initescrow
+bz not_setescrow
 
 gtxn 0 Amount
 int 100000
 ==
-bz not_initescrow
+bz not_setescrow
 
 // check if the other transaction is not a closing transaction
 gtxn 0 CloseRemainderTo
 global ZeroAddress
 ==
-bz not_initescrow
+bz not_setescrow
 
 // check if the application call has a NoOp oncompletion
 txn OnCompletion
 int NoOp
 ==
-bz not_initescrow
+bz not_setescrow
 
-// check if the application call has 1 argument: the byte string "init_escrow"
+// check if the application call has 1 argument: the byte string "set_escrow"
 txn NumAppArgs
 int 1
 == 
-bz not_initescrow
+bz not_setescrow
 
 txna ApplicationArgs 0
-byte "init_escrow"
+byte "set_escrow"
 ==
-bz not_initescrow
+bz not_setescrow
 
 //* Change the contract state *//
 
@@ -802,7 +798,7 @@ b approve
 //*   Requesting a withdrawal   *
 //*******************************
 
-not_initescrow:
+not_setescrow:
 
 //* Check if we're calling the withdraw function *//
 
