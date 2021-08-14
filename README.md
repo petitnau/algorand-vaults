@@ -120,8 +120,8 @@ init_escrow() {
 ```
 
 The three preconditions have the following meaning: 
-* `@gstate init_escrow->waiting`: the current contract state must be `init_escrow` (while the next state will be `waiting`)
-* `@from creator`: only the valut creator can call the function.
+* `@gstate init_escrow->waiting`: the current contract state must be `init_escrow` (the next state will be `waiting`)
+* `@from creator`: only the vault creator can call this function.
 * `@pay 100000 : * -> *$vault`: 100.000 micro-algos must be deposited in the contract, and this can be done by *any* user. 
 
 ## Depositing funds 
@@ -130,7 +130,7 @@ Any user can deposit algos into the vault. Since paying algos to an account cann
 
 ## Requesting a withdrawal
 
-Once the contract is created and the escrow connected to the contract, the vault creator can request a withdrawal. This requires the creator to declare the amount of algos to be withdrawn, and the address of the account that will receive the funds. The contract stores the declared amount and receiver, as well as the round when the withdrawal is requested. This is specified in AlgoML as follows:
+Once the contract is created and the escrow connected to the contract, the vault creator can request a withdrawal. This requires the creator to declare the `amount` of algos to be withdrawn, and the address of the `receiver`. The contract stores these values, as well as the round when the withdrawal is requested. This is specified in AlgoML as follows:
 
 ```java
 @gstate waiting->requested
@@ -142,9 +142,7 @@ withdraw(int amount, address receiver) {
     glob.request_time = curr_round
 }
 ```
-The `withdraw` function can only be called by the creator, and only while the contract is in state `waiting` (waiting for a withdrawal request) 
-
-To call it, the creator must pass the amount that they wants to withdraw, and the address where the withdrawn funds will be sent. The contract will then save those parameters, as well as the current round, into its global state, while also putting the contract into the `requested` state (A withdrawal request has been made). 
+The `withdraw` function can only be called by the creator, and only while the contract is in state waiting for a withdrawal request. The function body saves the values of the parameters and the current round in the contract state. The precondition `@gstate waiting->requested` also ensures that the next state will be `requested`. 
 
 ## Finalizing a request
 
