@@ -52,7 +52,6 @@ We specify vaults in [AlgoML](https://github.com/petitnau(algoml), a high-level 
 @precondition1
 ...
 @preconditionK
-...
 foo(x1,...,xn) {
   // state update
   ...
@@ -92,7 +91,6 @@ Any user can create a vault, providing the recovery address and the withdrawal w
 <!-- Once the contract gets created, the user will need to provide the escrow account address (it won't be possible to provide it on creation, since the escrow account needs the application ID). -->
 
 We specify the behaviour of this action in AlgoML as follows:
-
 ```java
 @gstate ->init_escrow
 Create create(address recovery, int wait_time) {
@@ -100,16 +98,18 @@ Create create(address recovery, int wait_time) {
     glob.wait_time = wait_time
 }
 ```
-The *create* function requires two parameters: the recovery address, and the withdrawal wait time. When this function is called, the contract is created and its two global state variables `recovery` and `wait_time` are initializated.
+The `create` function requires two parameters: the recovery address, and the withdrawal wait time. When this function is called, the contract is created and its two global state variables `recovery` and `wait_time` are initializated.
 The clause 
 ```java
 @gstate ->init_escrow
 ```
-means that after the create action is performed, the new state of the contract is ``init_escrow``. 
+means that after the create action is performed, the new state of the contract is `init_escrow`. 
 
 ## Initializing the escrow 
 
-After the contract is created, the vault owner must connect the escrow account to the stateful contract, in order to have a place to store the deposited funds.
+Once the contract has been created, the vault owner must invoke the `init_escrow` function to connect the contract with an escrow account. The escrow will store all the funds deposited in the vault.
+To call the `init_escrow` function, the contract must be in the `init_escrow` state, and must be called from the contract creator. The application call must also come bundled with a pay transaction, with an amount of 100'000 micro-algos (the amount needed to initialize an account). When called, the vault address is saved into the global state, and the contract state gets set to `waiting` (waiting for a withdrawal request).
+This is specified in AlgoML as follows: 
 ```java
 @gstate init_escrow->waiting
 @from creator
@@ -118,8 +118,6 @@ NoOp init_escrow() {
     glob.vault = vault
 }
 ```
-
-To call the *init_escrow* function, the contract must be in the `init_escrow` state (the state that immediately follows the contract creation), and must be called from the contract creator. The application call must also come bundled with a pay transaction, with an amount equal to 100'000 algos (the amount needed to initialize an account). When called, the vault address is saved into the global state, and the contract state gets set to `waiting` (waiting for a withdrawal request).
 
 ## Depositing funds 
 
