@@ -59,7 +59,7 @@ foo(x1,...,xn) {
 ```
 The intuition is that the function ``foo`` is enabled whenever all the preconditions are respected. Executing ``foo`` results in a state update, specified in the function body. Preconditions may have various forms: for instance, they can be predicates on the contract state, or checks that certain transactions belong to the group where the function is called.
 
-We refer to the [AlgoML whitepaper](https://notion.so/petitnau/Alg0ML) for More details on the use of AlgoML.
+We refer to the [AlgoML whitepaper](https://petitnau.notion.site/petitnau/AlgoML-b6a7abd7f06a43679cd88a1e8a49b4f5) for More details on the use of AlgoML.
 
 ## Contract state
 
