@@ -1,4 +1,4 @@
-# Overview
+  # Overview
 
 Vaults are a security mechanism to prevent cryptocurrency from being immediately withdrawn. When users want to withdraw some crypto from a vault, they must first issue a request, and the withdrawal is finalized only after a certain wait time has passed since the request. During the wait time, the request can be cancelled by using a recovery key. Vaults mitigate the risk that the user's private key is stolen: whenever an adversary attempts to withdraw using a stolen private key, the legit user can cancel the operation through the recovery key.
 
@@ -113,8 +113,8 @@ This is specified in AlgoML as follows:
 ```java
 @gstate init_escrow->waiting
 @from creator
-@pay 100000 : * -> *$vault
-set_escrow() {
+@pay 100000 : * -> vault
+set_escrow(address vault) {
     glob.vault = vault
 }
 ```
@@ -122,7 +122,7 @@ set_escrow() {
 The three preconditions have the following meaning: 
 * `@gstate init_escrow->waiting`: the current contract state must be `init_escrow` (the next state will be `waiting`)
 * `@from creator`: only the vault creator can call this function.
-* `@pay 100000 : * -> *$vault`: 100.000 micro-algos must be deposited in the contract, and this can be done by *any* user. 
+* `@pay 100000 : * -> vault`: 100'000 micro-algos must be deposited in the contract, and this can be done by *any* user. 
 
 ## Depositing funds 
 
@@ -142,7 +142,7 @@ withdraw(int amount, address receiver) {
     glob.request_time = curr_round
 }
 ```
-The `withdraw` function can only be called by the creator, and only while the contract is in state waiting for a withdrawal request. The function body saves the values of the parameters and the current round in the contract state. The precondition `@gstate waiting->requested` also ensures that the next state will be `requested`. Note that we do *not* require that the vault contains at least `amount` algos: indeed, this is not strictly necessary, as the creator can fund the vault after the request has been made.
+The `withdraw` function can only be called by the creator, and only while the contract is in state waiting for a withdrawal request. The function body saves the values of the parameters and the current round in the contract state. The precondition `@gstate waiting->requested` also ensures that the next state will be `requested`, while `@round *$curr_round` binds the current round to the `curr_round` identifier. Note that we do *not* require that the vault contains at least `amount` algos: indeed, this is not strictly necessary, as the creator can fund the vault after the request has been made.
 
 ## Finalizing a request
 
@@ -156,7 +156,7 @@ After the withdrawal wait period has passed, the vault creator can ask for the r
 finalize() { }
 ```
 
-The `finalize` function can only be called by the vault creator while, provided that the current state is `requested`, and `wait_time` rounds have passed since the `requested_time`. To call this function, the function call must be bundled with a pay transaction , as required by the precondition:
+The `finalize` function can only be called by the vault creator while the current state is `requested`, and `wait_time` rounds have passed since the `requested_time`. To call this function, the function call must be bundled with a pay transaction, as required by the precondition:
 ```java
 @pay glob.amount : vault -> glob.receiver
 ```
@@ -164,20 +164,20 @@ This transaction must transfer the amount of algos specified in the request from
 
 ## Cancelling a request 
 
-The vault creator can abort an unexpected withdrawal (which probably means that that someone has access to the private key of the creator). This is done by calling the `cancel` function, which transfers all the funds to a recovery account. Since the private key of the recovery account is needed to cancel a withdrawal request, an adversary who steals the private key of the vault creator but not the recovery key will not be able to cancel withdrawal requests.
+The vault creator can abort an unexpected withdrawal (which probably means that that someone has access to the private key of the creator). This is done by calling the `cancel` function, which cancels the current withdrawal request. Since the private key of the recovery account is needed to cancel a withdrawal request, an adversary who steals the private key of the vault creator but not the recovery key will not be able to cancel withdrawal requests.
 
 ```java
-@gstate requesting->waiting
+@gstate requested->waiting
 @from glob.recovery
 cancel() { }
 ```
 
-The preconditions ensure that the function is called from the recovery address, and only after a withdrawal request has been sent (i.e., only when the contract is in the `requesting` state). After the call, the contract will return to the `waiting` state, thus disabling the finalize function.
+The preconditions ensure that the function is called from the recovery address, and only after a withdrawal request has been sent (i.e., only when the contract is in the `requested` state). After the call, the contract will return to the `waiting` state, thus disabling the finalize function.
 
 
 # TEAL implementation
 
-The following code, apart from the comments, is completely generated by the AlgoML compiler.
+The following code, is completely generated by the AlgoML compiler.
 
 The TEAL code for the escrow account gives all of its "decisional power" to the stateful contract, which will control the escrow's spendings.
 
@@ -283,6 +283,17 @@ int 2
 ==
 bz not_setescrow
 
+// check if the application call has 1 argument: the byte string "set_escrow" and the vault address
+txn NumAppArgs
+int 2
+== 
+bz not_setescrow
+
+txna ApplicationArgs 0
+byte "set_escrow"
+==
+bz not_setescrow
+
 // check if the application is currently waiting to initialize the escrow
 byte "gstate"
 app_global_get
@@ -296,7 +307,7 @@ global CreatorAddress
 ==
 bz not_setescrow
 
-// check if the other transaction is a pay transaction of 100'000 algos (the amount required to initialize an account)
+// check if the other transaction is a pay transaction of 100'000 micro-algos (the amount required to initialize an account) to the vault
 gtxn 0 TypeEnum
 int pay
 ==
@@ -304,6 +315,11 @@ bz not_setescrow
 
 gtxn 0 Amount
 int 100000
+==
+bz not_setescrow
+
+gtxn 0 Receiver
+txna ApplicationArgs 1
 ==
 bz not_setescrow
 
@@ -319,17 +335,6 @@ int NoOp
 ==
 bz not_setescrow
 
-// check if the application call has 1 argument: the byte string "set_escrow"
-txn NumAppArgs
-int 1
-== 
-bz not_setescrow
-
-txna ApplicationArgs 0
-byte "set_escrow"
-==
-bz not_setescrow
-
 //* Change the contract state *//
 
 // set the contract state to waiting (waiting for a withdrawal request)
@@ -339,7 +344,7 @@ app_global_put
 
 // save the vault address into the global state
 byte "vault"
-gtxn 0 Receiver
+txna ApplicationArgs 1
 app_global_put
 
 b approve
@@ -731,11 +736,22 @@ b approve
 
 not_create:
 
-//* Check if we're calling the set_escrow function *//
+//* Check if we're calling the init_escrow function *//
 
 // check if there is one other transactions in this atomic group: the payment transaction needed to initialize the escrow account
 global GroupSize
 int 2
+==
+bz not_setescrow
+
+// check if the application call has 1 argument: the byte string "set_escrow" and the vault address
+txn NumAppArgs
+int 2
+== 
+bz not_setescrow
+
+txna ApplicationArgs 0
+byte "set_escrow"
 ==
 bz not_setescrow
 
@@ -752,7 +768,7 @@ global CreatorAddress
 ==
 bz not_setescrow
 
-// check if the other transaction is a pay transaction of 100'000 algos (the amount required to initialize an account)
+// check if the other transaction is a pay transaction of 100'000 micro-algos (the amount required to initialize an account) to the vault
 gtxn 0 TypeEnum
 int pay
 ==
@@ -760,6 +776,11 @@ bz not_setescrow
 
 gtxn 0 Amount
 int 100000
+==
+bz not_setescrow
+
+gtxn 0 Receiver
+txna ApplicationArgs 1
 ==
 bz not_setescrow
 
@@ -775,17 +796,6 @@ int NoOp
 ==
 bz not_setescrow
 
-// check if the application call has 1 argument: the byte string "set_escrow"
-txn NumAppArgs
-int 1
-== 
-bz not_setescrow
-
-txna ApplicationArgs 0
-byte "set_escrow"
-==
-bz not_setescrow
-
 //* Change the contract state *//
 
 // set the contract state to waiting (waiting for a withdrawal request)
@@ -795,7 +805,7 @@ app_global_put
 
 // save the vault address into the global state
 byte "vault"
-gtxn 0 Receiver
+txna ApplicationArgs 1
 app_global_put
 
 b approve
