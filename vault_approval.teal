@@ -54,13 +54,25 @@ b approve
 //*   Initializing the escrow   *
 //*******************************
 
+
 not_create:
 
-//* Check if we're calling the set_escrow function *//
+//* Check if we're calling the init_escrow function *//
 
 // check if there is one other transactions in this atomic group: the payment transaction needed to initialize the escrow account
 global GroupSize
 int 2
+==
+bz not_setescrow
+
+// check if the application call has 1 argument: the byte string "set_escrow" and the vault address
+txn NumAppArgs
+int 2
+== 
+bz not_setescrow
+
+txna ApplicationArgs 0
+byte "set_escrow"
 ==
 bz not_setescrow
 
@@ -77,7 +89,7 @@ global CreatorAddress
 ==
 bz not_setescrow
 
-// check if the other transaction is a pay transaction of 100'000 algos (the amount required to initialize an account)
+// check if the other transaction is a pay transaction of 100'000 micro-algos (the amount required to initialize an account) to the vault
 gtxn 0 TypeEnum
 int pay
 ==
@@ -85,6 +97,11 @@ bz not_setescrow
 
 gtxn 0 Amount
 int 100000
+==
+bz not_setescrow
+
+gtxn 0 Receiver
+txna ApplicationArgs 1
 ==
 bz not_setescrow
 
@@ -100,17 +117,6 @@ int NoOp
 ==
 bz not_setescrow
 
-// check if the application call has 1 argument: the byte string "set_escrow"
-txn NumAppArgs
-int 1
-== 
-bz not_setescrow
-
-txna ApplicationArgs 0
-byte "set_escrow"
-==
-bz not_setescrow
-
 //* Change the contract state *//
 
 // set the contract state to waiting (waiting for a withdrawal request)
@@ -120,7 +126,7 @@ app_global_put
 
 // save the vault address into the global state
 byte "vault"
-gtxn 0 Receiver
+txna ApplicationArgs 1
 app_global_put
 
 b approve

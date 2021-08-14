@@ -581,8 +581,8 @@ To call the set_escrow function, the user must submit a group transaction with a
 
 ```bash
 goal clerk compile "vault_escrow.teal"
-goal clerk send --from="{CREATOR-ADDRESS}" --to="7WAUA5CBMY7BX6NRCYAV2DRRC5ATCIZQRGCCTCKNUNSAWDIFXZVT6CQOLI" --amount=100000 --out=txn1.tx
-goal app call --app-id {APP-ID} --app-arg "str:set_escrow" --from="{CREATOR-ADDRESS}"  --out=txn2.tx
+goal clerk send --from="{CREATOR-ADDRESS}" --to="{ESCROW-ADDRESS}" --amount=100000 --out=txn1.tx
+goal app call --app-id {APP-ID} --app-arg "str:set_escrow" --app-arg "addr:{ESCROW-ADDRESS}" --from="{CREATOR-ADDRESS}"  --out=txn2.tx
 cat txn1.tx txn2.tx > txn_combined.tx 
 goal clerk group -i txn_combined.tx -o txn_grouped.tx
 goal clerk sign -i txn_grouped.tx -o txn_signed.tx 
@@ -594,7 +594,7 @@ goal clerk rawsend -f txn_signed.tx
 To deposit funds into the contract, the vault creator can simply send a pay transaction to the escrow account.
 
 ```bash
-goal clerk send --from="{CREATOR-ADDRESS}" --to="7WAUA5CBMY7BX6NRCYAV2DRRC5ATCIZQRGCCTCKNUNSAWDIFXZVT6CQOLI" --amount={DEPOSIT-AMOUNT}
+goal clerk send --from="{CREATOR-ADDRESS}" --to="{ESCROW-ADDRESS}" --amount={DEPOSIT-AMOUNT}
 ```
 
 ## Requesting a withdrawal

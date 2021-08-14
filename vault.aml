@@ -14,8 +14,8 @@ Create create(address recovery, int wait_time) {
 
 @gstate init_escrow->waiting
 @from creator
-@pay 100000 : * -> *$vault
-set_escrow() {
+@pay 100000 : * -> vault
+set_escrow(address vault) {
     glob.vault = vault
 }
     
