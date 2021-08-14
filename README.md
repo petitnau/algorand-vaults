@@ -184,10 +184,10 @@ The TEAL code for the escrow account gives all of its "decisional power" to the 
 The TEAL code for the stateful contract is split into blocks, one per AlgoML function. 
 Each block, is split into two parts: the head for dispatching, and the body for state changes. 
 
-The program starts by checking the requirements of the first block. If at least one of the requirements in the head of the block are not met, the program jumps to the next block, and its requirements are checked.
+The program starts by checking the requirements of the first block: if at least one of the requirements in the head of the block are not met, the program jumps to the next block, and its requirements are checked.
 If all the requirements of a block are met, the program will execute the body of the block, before approving the transaction.
 
-If instead the transaction doesn't meet all the requirements of any block, it fails. 
+If instead the program can't find a block for which all the requirements are met, it fails. 
 
 ## Escrow account
 
