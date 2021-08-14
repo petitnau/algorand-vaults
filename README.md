@@ -119,13 +119,18 @@ init_escrow() {
 }
 ```
 
+The three preconditions have the following meaning: 
+* `@gstate init_escrow->waiting`: the current contract state must be `init_escrow` (while the next state will be `waiting`)
+* `@from creator`: only the valut creator can call the function.
+* `@pay 100000 : * -> *$vault`: 100.000 micro-algos must be deposited in the contract, and this can be done by *any* user. 
+
 ## Depositing funds 
 
 Any user can deposit algos into the vault. Since paying algos to an account cannot be constrained in Algorand, this part of the specification is given by default, so it does not require a specific clause in AlgoML. 
 
 ## Requesting a withdrawal
 
-Once the contract is created and the escrow connected to the contract, the vault creator can request a withdrawal. To do so, they must declare the amount of algos that they want to withdraw, and the address of the account that will receive the funds. The contract will need to store the declared receiver of the funds, and the amount of funds that will be withdrawn, while also storing the round at which the withdrawal was requested.
+Once the contract is created and the escrow connected to the contract, the vault creator can request a withdrawal. This requires the creator to declare the amount of algos to be withdrawn, and the address of the account that will receive the funds. The contract stores the declared amount and receiver, as well as the round when the withdrawal is requested. This is specified in AlgoML as follows:
 
 ```java
 @gstate waiting->requested
@@ -137,7 +142,7 @@ withdraw(int amount, address receiver) {
     glob.request_time = curr_round
 }
 ```
-The *withdraw* function can only be called by the creator, and only while the contract is in state `waiting` (waiting for a withdrawal request) 
+The `withdraw` function can only be called by the creator, and only while the contract is in state `waiting` (waiting for a withdrawal request) 
 
 To call it, the creator must pass the amount that they wants to withdraw, and the address where the withdrawn funds will be sent. The contract will then save those parameters, as well as the current round, into its global state, while also putting the contract into the `requested` state (A withdrawal request has been made). 
 
