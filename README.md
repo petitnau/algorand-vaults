@@ -47,7 +47,7 @@ Since the TEAL implementation of vaults is quite complex, we first specify their
 
 # AlgoML specification
 
-We specify vaults in [AlgoML](https://github.com/petitnau/algoml), a high-level DSL for Algorand contracts that compiles into TEAL. Roughly, an AlgoML specification is a sequence of clauses of the form:
+We specify vaults in [AlgoML](https://github.com/petitnau(algoml), a high-level DSL for Algorand contracts that compiles into TEAL. Roughly, an AlgoML specification is a sequence of clauses of the form:
 ```java
 @precondition1
 ...
@@ -93,7 +93,7 @@ Any user can create a vault, providing the recovery address and the withdrawal w
 We specify the behaviour of this action in AlgoML as follows:
 ```java
 @gstate ->init_escrow
-Create create(address recovery, int wait_time) {
+create(address recovery, int wait_time) {
     glob.recovery = recovery
     glob.wait_time = wait_time
 }
@@ -114,7 +114,7 @@ This is specified in AlgoML as follows:
 @gstate init_escrow->waiting
 @from creator
 @pay 100000 : * -> *$vault
-set_escrow() {
+NoOp set_escrow() {
     glob.vault = vault
 }
 ```
@@ -160,13 +160,11 @@ The `finalize` function can only be called by the vault creator while, provided 
 ```java
 @pay glob.amount : vault -> glob.receiver
 ```
-This transaction must transfer have the vault the amount of algos specified in the request from the vault to the declared receiver. After this function call, the contract state is set to `waiting`, where the contract can accept another request.
+This transaction must transfer the amount of algos specified in the request from the vault to the declared receiver. After the function call, the contract state is set to `waiting`, where the contract can accept another request.
 
 ## Cancelling a request 
 
-If the vault creator notices a withdrawal request that they have not made (and therefore that someone has access to their private key), they can cancel the transaction using their recovery account, and then proceed to withdraw all the funds into a more secure account.
-
-Notice that, since to cancel a withdrawal request the recovery account private key is needed, anyone who steals the vault creator private key (but not the recovery key) won't be able to cancel any withdrawal request.
+The vault creator can abort an unexpected withdrawal (which probably means that that someone has access to the private key of the creator). This is done by calling the `cancel` function, which transfers all the funds to a recovery account. Since the private key of the recovery account is needed to cancel a withdrawal request, an adversary who steals the private key of the vault creator but not the recovery key will not be able to cancel withdrawal requests.
 
 ```java
 @gstate requesting->waiting
@@ -174,13 +172,12 @@ Notice that, since to cancel a withdrawal request the recovery account private k
 cancel() { }
 ```
 
-The cancel function can only be called **from the recovery address**, and only after a withdrawal request has been sent (therefore, only while the contract is in state `requesting`). Once called, the contract will go back to the `waiting` state, thus disabling the finalize function, and requiring another withdraw call to be made for any further withdrawal request.
+The preconditions ensure that the function is called from the recovery address, and only after a withdrawal request has been sent (i.e., only when the contract is in the `requesting` state). After the call, the contract will return to the `waiting` state, thus disabling the finalize function.
 
 
 # TEAL implementation
 
 ## Escrow account
-**Teal**
 
 ```java
 #pragma version 3
@@ -213,7 +210,7 @@ int 1
 ```
 
 ## Creating the vault
-**Teal**
+
 ```java
 //* Check if we're calling the create function *//
 
@@ -338,7 +335,7 @@ b approve
 ```
 
 ## Requesting a withdrawal
-**Teal**
+
 ```java
 not_setescrow:
 
@@ -407,7 +404,7 @@ b approve
 ```
 
 ## Finalizing a request
-**Teal**
+
 ```java
 not_withdraw:
 
@@ -501,7 +498,6 @@ b approve
 
 ## Cancelling a request
 
-**Teal**
 ```java
 not_finalize:
 
@@ -631,7 +627,7 @@ glob mut int amount
 glob mut address receiver
 
 @gstate ->init_escrow
-Create create(address recovery, int wait_time) {
+create(address recovery, int wait_time) {
     glob.recovery = recovery
     glob.wait_time = wait_time
 }
