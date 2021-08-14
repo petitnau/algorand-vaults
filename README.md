@@ -121,7 +121,7 @@ NoOp init_escrow() {
 
 ## Depositing funds 
 
-The vault owner should be able to deposit funds into the vault. A simple pay transaction to the escrow account can suffice. In this implementation any user will be able to deposit money into the vault, however, this is not problematic.
+Any user can deposit algos into the vault. Since paying algos to an account cannot be constrained in Algorand, this part of the specification is given by default, so it does not require a specific clause in AlgoML. 
 
 ## Requesting a withdrawal
 Once the contract is created, and the escrow account connected to the stateful contract, the vault creator can request a withdrawal. To do so, they must declare the amount of algos that they want to withdraw, and the address of the account that will receive the funds. The contract will need to store the declared receiver of the funds, and the amount of funds that will be withdrawn, while also storing the round at which the withdrawal was requested.
