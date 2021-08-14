@@ -134,7 +134,7 @@ Once the contract is created and the escrow connected to the contract, the vault
 
 ```java
 @gstate waiting->requested
-@round *$curr_round
+@round $curr_round
 @from creator
 withdraw(int amount, address receiver) {
     glob.amount = amount
@@ -142,7 +142,7 @@ withdraw(int amount, address receiver) {
     glob.request_time = curr_round
 }
 ```
-The `withdraw` function can only be called by the creator, and only while the contract is in state waiting for a withdrawal request. The function body saves the values of the parameters and the current round in the contract state. The precondition `@gstate waiting->requested` also ensures that the next state will be `requested`, while `@round *$curr_round` binds the current round to the `curr_round` identifier. Note that we do *not* require that the vault contains at least `amount` algos: indeed, this is not strictly necessary, as the creator can fund the vault after the request has been made.
+The `withdraw` function can only be called by the creator, and only while the contract is in state waiting for a withdrawal request. The function body saves the values of the parameters and the current round in the contract state. The precondition `@gstate waiting->requested` also ensures that the next state will be `requested`, while `@round $curr_round` binds the current round to the `curr_round` identifier. Note that we do *not* require that the vault contains at least `amount` algos: indeed, this is not strictly necessary, as the creator can fund the vault after the request has been made.
 
 ## Finalizing a request
 
@@ -275,7 +275,7 @@ b approve
 ```java
 not_create:
 
-//* Check if we're calling the init_escrow function *//
+//* Check if we're calling the set_escrow function *//
 
 // check if there is one other transactions in this atomic group: the payment transaction needed to initialize the escrow account
 global GroupSize
@@ -283,7 +283,20 @@ int 2
 ==
 bz not_setescrow
 
-// check if the application call has 1 argument: the byte string "set_escrow" and the vault address
+// check if the application is currently waiting to initialize the escrow
+byte "gstate"
+app_global_get
+byte "init_escrow"
+==
+bz not_setescrow
+
+// check if the application call has a NoOp oncompletion
+txn OnCompletion
+int NoOp
+==
+bz not_setescrow
+
+// check if the application call has 2 arguments: the byte string "set_escrow" and the vault address
 txn NumAppArgs
 int 2
 == 
@@ -291,13 +304,6 @@ bz not_setescrow
 
 txna ApplicationArgs 0
 byte "set_escrow"
-==
-bz not_setescrow
-
-// check if the application is currently waiting to initialize the escrow
-byte "gstate"
-app_global_get
-byte "init_escrow"
 ==
 bz not_setescrow
 
@@ -326,12 +332,6 @@ bz not_setescrow
 // check if the other transaction is not a closing transaction
 gtxn 0 CloseRemainderTo
 global ZeroAddress
-==
-bz not_setescrow
-
-// check if the application call has a NoOp oncompletion
-txn OnCompletion
-int NoOp
 ==
 bz not_setescrow
 
@@ -370,12 +370,6 @@ byte "waiting"
 ==
 bz not_withdraw
 
-// check if this transaction is sent by the contract creator
-txn Sender
-global CreatorAddress
-==
-bz not_withdraw
-
 // check if the application call has a NoOp oncompletion
 txn OnCompletion
 int NoOp
@@ -390,6 +384,12 @@ bz not_withdraw
 
 txna ApplicationArgs 0
 byte "withdraw"
+==
+bz not_withdraw
+
+// check if this transaction is sent by the contract creator
+txn Sender
+global CreatorAddress
 ==
 bz not_withdraw
 
@@ -439,6 +439,23 @@ byte "requested"
 ==
 bz not_finalize
 
+// check if the application call has a NoOp oncompletion
+txn OnCompletion
+int NoOp
+==
+bz not_finalize
+
+// Check if the call has 1 argument ("finalize")
+txn NumAppArgs
+int 1
+==
+bz not_finalize
+
+txna ApplicationArgs 0
+byte "finalize"
+==
+bz not_finalize
+
 // check if the withdrawal wait time has passed since the withdraw request
 global Round
 byte "request_time"
@@ -485,23 +502,6 @@ global ZeroAddress
 ==
 bz not_finalize
 
-// check if the application call has a NoOp oncompletion
-txn OnCompletion
-int NoOp
-==
-bz not_finalize
-
-// Check if the call has 1 argument ("finalize")
-txn NumAppArgs
-int 1
-==
-bz not_finalize
-
-txna ApplicationArgs 0
-byte "finalize"
-==
-bz not_finalize
-
 //* Change the cntract state *//
 
 // set the contract state back to waiting (waiting for a withdrawal request to be made)
@@ -532,13 +532,6 @@ byte "requested"
 ==
 bz not_cancel
 
-// check if this transaction is sent by the recovery account
-txn Sender
-byte "recovery"
-app_global_get
-==
-bz not_cancel
-
 // check if the application call has a NoOp oncompletion
 txn OnCompletion
 int NoOp
@@ -553,6 +546,13 @@ bz not_cancel
 
 txna ApplicationArgs 0
 byte "cancel"
+==
+bz not_cancel
+
+// check if this transaction is sent by the recovery account
+txn Sender
+byte "recovery"
+app_global_get
 ==
 bz not_cancel
 
@@ -650,13 +650,13 @@ Create vault(address recovery, int wait_time) {
 
 @gstate init_escrow->waiting
 @from creator
-@pay 100000 : * -> *$vault
-set_escrow() {
+@pay 100000 : * -> vault
+set_escrow(address vault) {
     glob.vault = vault
 }
     
 @gstate waiting->requesting
-@round *$curr_round
+@round $curr_round
 @from creator
 withdraw(int amount, address receiver) {
     glob.amount = amount
@@ -736,7 +736,7 @@ b approve
 
 not_create:
 
-//* Check if we're calling the init_escrow function *//
+//* Check if we're calling the set_escrow function *//
 
 // check if there is one other transactions in this atomic group: the payment transaction needed to initialize the escrow account
 global GroupSize
@@ -744,7 +744,20 @@ int 2
 ==
 bz not_setescrow
 
-// check if the application call has 1 argument: the byte string "set_escrow" and the vault address
+// check if the application is currently waiting to initialize the escrow
+byte "gstate"
+app_global_get
+byte "init_escrow"
+==
+bz not_setescrow
+
+// check if the application call has a NoOp oncompletion
+txn OnCompletion
+int NoOp
+==
+bz not_setescrow
+
+// check if the application call has 2 arguments: the byte string "set_escrow" and the vault address
 txn NumAppArgs
 int 2
 == 
@@ -752,13 +765,6 @@ bz not_setescrow
 
 txna ApplicationArgs 0
 byte "set_escrow"
-==
-bz not_setescrow
-
-// check if the application is currently waiting to initialize the escrow
-byte "gstate"
-app_global_get
-byte "init_escrow"
 ==
 bz not_setescrow
 
@@ -787,12 +793,6 @@ bz not_setescrow
 // check if the other transaction is not a closing transaction
 gtxn 0 CloseRemainderTo
 global ZeroAddress
-==
-bz not_setescrow
-
-// check if the application call has a NoOp oncompletion
-txn OnCompletion
-int NoOp
 ==
 bz not_setescrow
 
@@ -831,12 +831,6 @@ byte "waiting"
 ==
 bz not_withdraw
 
-// check if this transaction is sent by the contract creator
-txn Sender
-global CreatorAddress
-==
-bz not_withdraw
-
 // check if the application call has a NoOp oncompletion
 txn OnCompletion
 int NoOp
@@ -851,6 +845,12 @@ bz not_withdraw
 
 txna ApplicationArgs 0
 byte "withdraw"
+==
+bz not_withdraw
+
+// check if this transaction is sent by the contract creator
+txn Sender
+global CreatorAddress
 ==
 bz not_withdraw
 
@@ -900,6 +900,23 @@ byte "requested"
 ==
 bz not_finalize
 
+// check if the application call has a NoOp oncompletion
+txn OnCompletion
+int NoOp
+==
+bz not_finalize
+
+// Check if the call has 1 argument ("finalize")
+txn NumAppArgs
+int 1
+==
+bz not_finalize
+
+txna ApplicationArgs 0
+byte "finalize"
+==
+bz not_finalize
+
 // check if the withdrawal wait time has passed since the withdraw request
 global Round
 byte "request_time"
@@ -946,23 +963,6 @@ global ZeroAddress
 ==
 bz not_finalize
 
-// check if the application call has a NoOp oncompletion
-txn OnCompletion
-int NoOp
-==
-bz not_finalize
-
-// Check if the call has 1 argument ("finalize")
-txn NumAppArgs
-int 1
-==
-bz not_finalize
-
-txna ApplicationArgs 0
-byte "finalize"
-==
-bz not_finalize
-
 //* Change the cntract state *//
 
 // set the contract state back to waiting (waiting for a withdrawal request to be made)
@@ -993,13 +993,6 @@ byte "requested"
 ==
 bz not_cancel
 
-// check if this transaction is sent by the recovery account
-txn Sender
-byte "recovery"
-app_global_get
-==
-bz not_cancel
-
 // check if the application call has a NoOp oncompletion
 txn OnCompletion
 int NoOp
@@ -1014,6 +1007,13 @@ bz not_cancel
 
 txna ApplicationArgs 0
 byte "cancel"
+==
+bz not_cancel
+
+// check if this transaction is sent by the recovery account
+txn Sender
+byte "recovery"
+app_global_get
 ==
 bz not_cancel
 
