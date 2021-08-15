@@ -11,8 +11,6 @@ The purpose of this tutorial is to create a **decentralized** vault as an Algora
 
 Since the TEAL implementation of vaults is quite complex, we first specify their functionality in [AlgoML](https://github.com/petitnau/algoml) (after *Algorand Modelling Language*), a novel DSL for Algorand contracts, that compiles into TEAL scripts.
 
-*Disclaimer: the project is not audited and should not be used in a production environment.*
-
 ## Table of contents
 - [Overview](#overview)
   - [Table of contents](#table-of-contents)
@@ -32,7 +30,7 @@ Since the TEAL implementation of vaults is quite complex, we first specify their
   - [Requesting a withdrawal](#requesting-a-withdrawal-1)
   - [Finalizing a request](#finalizing-a-request-1)
   - [Cancelling a request](#cancelling-a-request-1)
-- [Calling the functions](#calling-the-functions)
+- [Using the vault](#using-the-vault)
   - [Creating the vault](#creating-the-vault-2)
   - [Initializing the escrow](#initializing-the-escrow-1)
   - [Depositing funds](#depositing-funds-1)
@@ -45,7 +43,8 @@ Since the TEAL implementation of vaults is quite complex, we first specify their
     - [Stateful contract's approval program](#stateful-contracts-approval-program)
     - [Stateful contract's clear program](#stateful-contracts-clear-program)
     - [Stateless contract](#stateless-contract)
-
+- [Disclaimer](#disclaimer)
+- [Credits](#credits)
 
 # AlgoML specification
 
@@ -568,18 +567,18 @@ app_global_put
 b approve
 ```
 
-# Calling the functions
+# Using the vault
 
 ## Creating the vault
 
-To call the create function, a simple Application Create transaction can be sent to the blockchain, with the string "create" as a parameter.
+To call the `create` function, a simple Application Create transaction can be sent to the blockchain, with the string "create" as a parameter.
 
 ```bash
 goal app create --app-arg "str:vault" --app-arg "addr:{RECOVERY-ADDRESS}" --app-arg "int:{WAIT-TIME}" --creator "{CREATOR-ADDRESS}" --approval-prog "vault_approval.teal" --clear-prog "vault_clear.teal" --global-byteslices 4 --global-ints 3 --local-byteslices 0 --local-ints 0
 ```
 ## Initializing the escrow
 
-To call the set_escrow function, the user must submit a group transaction with an application call (with set_escrow as an argument), and a payment transaction of 100'000 micro-algos to the escrow account.
+To call the `set_escrow` function, the user must submit a group transaction with an application call (with set_escrow as an argument), and a payment transaction of 100'000 micro-algos to the escrow account.
 
 ```bash
 goal clerk compile "vault_escrow.teal"
@@ -601,7 +600,7 @@ goal clerk send --from="{CREATOR-ADDRESS}" --to="{ESCROW-ADDRESS}" --amount={DEP
 
 ## Requesting a withdrawal
 
-To call the withdraw function, an application call with the parameters "withdraw", an integer (the amount to be withdrawn), and a string (the receiving address), must be submitted.
+To call the `withdraw` function, an application call with the parameters "withdraw", an integer (the amount to be withdrawn), and a string (the receiving address), must be submitted.
 
 ```bash
 goal app call --app-id {APP-ID} --app-arg "str:withdraw" --app-arg "int:{WITHDRAW-AMOUNT}" --app-arg "addr:{WITHDRAW-RECEIVER}" --from="{CREATOR-ADDRESS}"
@@ -609,7 +608,7 @@ goal app call --app-id {APP-ID} --app-arg "str:withdraw" --app-arg "int:{WITHDRA
 
 ## Finalizing a request
 
-To call the finalize function, a pay transaction from the escrow account to the previously declared receiving account, of the previously declared amount must be sent, together with an application call with the string "finalize" as a parameter.
+To call the `finalize` function, a pay transaction from the escrow account to the previously declared receiving account anf of the declared amount must be sent, together with an application call with the string "finalize" as a parameter.
 
 ```bash
 goal clerk send --from-program="vault_escrow.teal" --to="{WITHDRAW-RECEIVER}" --amount={WITHDRAW-AMOUNT} --fee 0 --out=txn1.tx 
@@ -626,7 +625,7 @@ goal clerk rawsend -f txn_signed.tx
 
 ## Cancelling a request
 
-To call the cancel function, a simple application call with the string "finalize" as a parameter can be sent (from the recovery address).
+To call the `cancel` function, a simple application call with the string "finalize" as a parameter can be sent (from the recovery address).
 
 ```bash
 goal app call --app-id {APP-ID} --app-arg "str:cancel" --from="{RECOVERY-ADDRESS}"
@@ -1078,3 +1077,10 @@ assert
 int 1
 ```
 
+# Disclaimer
+
+The project is not audited and should not be used in a production environment.
+
+# Credits
+
+This tutorial has been realised by Roberto Pettinau and Massimo Bartoletti from the University of Cagliari, Italy.
