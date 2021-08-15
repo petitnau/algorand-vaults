@@ -1,4 +1,4 @@
-  # Overview
+  # Algorand vaults
 
 Vaults are a security mechanism to prevent cryptocurrency from being immediately withdrawn. When users want to withdraw some crypto from a vault, they must first issue a request, and the withdrawal is finalized only after a certain wait time has passed since the request. During the wait time, the request can be cancelled by using a recovery key. Vaults mitigate the risk that the user's private key is stolen: whenever an adversary attempts to withdraw using a stolen private key, the legit user can cancel the operation through the recovery key.
 
@@ -9,7 +9,7 @@ Vaults are quite popular in blockchain ecosystems. For instance, they are availa
 
 The purpose of this tutorial is to create a **decentralized** vault as an Algorand smart contract.
 
-Since the TEAL implementation of vaults is quite complex, we first specify their functionality in AlgoML (after *Algorand Modelling Language*), a novel DSL for Algorand contracts, that compiles into TEAL scripts.
+Since the TEAL implementation of vaults is quite complex, we first specify their functionality in [AlgoML](https://github.com/petitnau/algoml) (after *Algorand Modelling Language*), a novel DSL for Algorand contracts, that compiles into TEAL scripts.
 
 *Disclaimer: the project is not audited and should not be used in a production environment.*
 
