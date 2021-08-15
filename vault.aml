@@ -20,7 +20,7 @@ set_escrow(address vault) {
 }
     
 @gstate waiting->requesting
-@round *$curr_round
+@round $curr_round
 @from creator
 withdraw(int amount, address receiver) {
     glob.amount = amount
