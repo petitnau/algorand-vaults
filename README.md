@@ -144,7 +144,7 @@ withdraw(int amount, address receiver) {
     glob.request_time = curr_round
 }
 ```
-The `withdraw` function can only be called by the creator, and only while the contract is in state waiting for a withdrawal request. The function body saves the values of the parameters and the current round in the contract state. The precondition `@gstate waiting->requested` also ensures that the next state will be `requested`, while `@round $curr_round` binds the current round to the `curr_round` identifier. Note that we do *not* require that the vault contains at least `amount` algos: indeed, this is not strictly necessary, as the creator can fund the vault after the request has been made.
+The `withdraw` function can only be called by the creator, and only while the contract is in the `waiting` state. The function body saves the values of the parameters and the current round in the contract state. The precondition `@gstate waiting->requested` also ensures that the next state will be `requested`, while `@round $curr_round` binds the current round to the `curr_round` identifier. Note that we do *not* require that the vault contains at least `amount` algos: indeed, this is not strictly necessary, as the creator can fund the vault after the request has been made.
 
 ## Finalizing a request
 
