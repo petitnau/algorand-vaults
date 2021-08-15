@@ -11,6 +11,8 @@ The purpose of this tutorial is to create a **decentralized** vault as an Algora
 
 Since the TEAL implementation of vaults is quite complex, we first specify their functionality in AlgoML (after *Algorand Modelling Language*), a novel DSL for Algorand contracts, that compiles into TEAL scripts.
 
+*Disclaimer: the project is not audited and should not be used in a production environment.*
+
 ## Table of contents
 - [Overview](#overview)
   - [Table of contents](#table-of-contents)
