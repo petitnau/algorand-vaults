@@ -12,7 +12,7 @@ The purpose of this tutorial is to create a **decentralized** vault as an Algora
 Since the TEAL implementation of vaults is quite complex, we first specify their functionality in [AlgoML](https://github.com/petitnau/algoml) (after *Algorand Modelling Language*), a novel DSL for Algorand contracts, that compiles into TEAL scripts.
 
 ## Table of contents
-- [Overview](#overview)
+- [Algorand vaults](#algorand-vaults)
   - [Table of contents](#table-of-contents)
 - [AlgoML specification](#algoml-specification)
   - [Contract state](#contract-state)
@@ -188,7 +188,7 @@ followed by the code that implements the state update (corresponding to the func
 
 The stateful contract starts by checking the preconditions of the first block: if some precondition is not met, the code jumps to the next block.
 If all the preconditions of a block are met, its body is executed before approving the transaction.
-The none of the blocks satisfies all its preconditions, the execution fails, and the transaction is not approved. 
+If none of the blocks satisfies all its preconditions, the execution fails, and the transaction is not approved. 
 
 ## Escrow account
 
@@ -1050,7 +1050,7 @@ err
 ```java
 #pragma version 3
 
-// aseert that the stateful contracts participates in the transaction group
+// assert that the stateful contracts participates in the transaction group
 gtxn 1 TypeEnum
 int appl
 ==
