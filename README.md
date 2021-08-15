@@ -179,7 +179,7 @@ The preconditions ensure that the function is called from the recovery address, 
 
 # TEAL implementation
 
-We exploit the AlgoML compiler to refine the vault specification into a TEAL implementation; we just add inline comments into the TEAL code for clarity.
+We exploit the AlgoML compiler to refine the vault specification into a TEAL implementation; we just add inline comments into the TEAL code produced by the compiler for clarity.
 
 The TEAL code for the stateless escrow contract delegates the stateful contract for controlling the escrow spendings.
 
@@ -226,7 +226,7 @@ int 1
 ## Creating the vault
 
 ```java
-//* Check if we're calling the create function *//
+//* Check if we are calling the create function *//
 
 // check if there are no other transactions in this atomic group
 global GroupSize
@@ -277,7 +277,7 @@ b approve
 ```java
 not_create:
 
-//* Check if we're calling the set_escrow function *//
+//* Check if we are calling the set_escrow function *//
 
 // check if there is one other transactions in this atomic group: the payment transaction needed to initialize the escrow account
 global GroupSize
@@ -357,7 +357,7 @@ b approve
 ```java
 not_setescrow:
 
-//* Check if we're calling the withdraw function *//
+//* Check if we are calling the withdraw function *//
 
 // check if there are no other transactions in this atomic group
 global GroupSize
@@ -426,7 +426,7 @@ b approve
 ```java
 not_withdraw:
 
-//* Check if we're calling the finalize function *//
+//* Check if we are calling the finalize function *//
 
 // check if the application call transactions is bundled with a pay transaction (the withdrawal)
 global GroupSize
@@ -519,7 +519,7 @@ b approve
 ```java
 not_finalize:
 
-//* Check if we're calling the cancel function *//
+//* Check if we are calling the cancel function *//
 
 // check if there aren't other transactions in this atomic group
 global GroupSize
