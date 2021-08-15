@@ -98,12 +98,12 @@ Create vault(address recovery, int wait_time) {
     glob.wait_time = wait_time
 }
 ```
-The `create` function requires two parameters: the recovery address, and the withdrawal wait time. When this function is called, the contract is created and its two global state variables `recovery` and `wait_time` are initializated.
+The `Create` modifier implies that this function actually constructs the contract. The function has two parameters: the `recovery` address, and the withdrawal `wait_time`. The body of the function just initializes the two global state variables `recovery` and `wait_time`.
 The clause 
 ```java
 @gstate ->init_escrow
 ```
-means that after the create action is performed, the new state of the contract is `init_escrow`. 
+means that after the action is performed, the new state of the contract is `init_escrow`. 
 
 ## Initializing the escrow 
 
