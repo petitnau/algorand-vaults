@@ -109,8 +109,8 @@ means that after the action is performed, the new state of the contract is `init
 
 ## Initializing the escrow 
 
-Once the contract has been created, the vault creator must invoke the `set_escrow` function to connect the contract with an escrow account. The escrow will store all the funds deposited in the vault.
-To call the `set_escrow` function, the contract must be in the `init_escrow` state, and must be called from the contract creator. The application call must also come bundled with a pay transaction, with an amount of 100'000 micro-algos (the amount needed to initialize an account). When called, the vault address is saved into the global state, and the contract state is set to `waiting` (waiting for a withdrawal request).
+Once the vault has been created, the creator must invoke the `set_escrow` function to connect it with an escrow account. The escrow will store all the algos deposited in the vault.
+To call `set_escrow`, the contract must be in the `init_escrow` state, and must be called from the vault creator. The application call must be bundled with a pay transaction, with an amount of 100'000 micro-algos (the amount needed to initialize an account). When called, the escrow address is saved into the global state, and the contract state is set to `waiting` (waiting for a withdrawal request).
 This is specified in AlgoML as follows: 
 ```java
 @gstate init_escrow->waiting
